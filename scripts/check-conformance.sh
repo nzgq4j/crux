@@ -47,6 +47,26 @@ else
   ok "the service_role name is confined to src/lib/db/"
 fi
 
+# --- Block 06: identity is validated, never decoded ------------------------------
+# supabase.auth.getSession() returns whatever the session cookie contains, which a
+# browser controls. getUser() verifies the token against the auth server. The two look
+# interchangeable and are not, so the unsafe one is refused outright.
+if out=$(grep -rn "auth\.getSession()" src --include='*.ts' --include='*.tsx' 2>/dev/null); then
+  bad "auth.getSession() trusts the cookie — use auth.getUser(), which validates"; show "$out"
+else
+  ok "identity is read with auth.getUser(), never auth.getSession()"
+fi
+
+# --- Block 06: identity is read through one helper -------------------------------
+# createServerClient outside the session helper and middleware means a second place
+# that decides who someone is, held to whatever standard that author chose.
+if out=$(grep -rn "createServerClient" src --include='*.ts' --include='*.tsx' 2>/dev/null \
+          | grep -v '^src/lib/auth/session.ts' | grep -v '^src/middleware.ts'); then
+  bad "createServerClient outside src/lib/auth/session.ts and src/middleware.ts"; show "$out"
+else
+  ok "the auth client is constructed only in the session helper and middleware"
+fi
+
 # --- rules/frontend.md 19: no server-only value in a NEXT_PUBLIC_ variable ------
 if out=$(grep -rnE 'NEXT_PUBLIC_[A-Z_]*(SECRET|PRIVATE|PASSWORD|TOKEN|SERVICE_ROLE)' \
           src .env.example 2>/dev/null); then
