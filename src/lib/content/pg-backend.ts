@@ -91,11 +91,14 @@ export async function listContent(filters: ListFilters = {}): Promise<Page<Conte
     )
     const total = Number(totalRow?.total ?? 0)
 
+    // Pagination is bound rather than interpolated. The count query above keeps the
+    // unpaginated params so the total stays correct.
+    const pageParams = [...params, pageSize, offset]
     const items = await s.query<ContentSummary>(
       `SELECT ${SUMMARY_COLUMNS} ${PUBLISHED_FROM}${where}
        ORDER BY v.published_at ${order} NULLS LAST, i.canonical_slug ASC
-       LIMIT ${pageSize} OFFSET ${offset}`,
-      params,
+       LIMIT $${pageParams.length - 1} OFFSET $${pageParams.length}`,
+      pageParams,
     )
 
     return { items, total, page, pageSize, pageCount: Math.max(1, Math.ceil(total / pageSize)) }
@@ -123,8 +126,8 @@ export function listRelated(itemId: string, limit = 4): Promise<ContentSummary[]
              JOIN taxonomy.content_terms b ON b.term_id = a.term_id
             WHERE a.content_item_id = $1 AND b.content_item_id = i.id)
        ORDER BY v.published_at DESC NULLS LAST
-       LIMIT ${bounded}`,
-      [itemId],
+       LIMIT $2`,
+      [itemId, bounded],
     ),
   )
 }
@@ -270,7 +273,8 @@ export function listExperts(): Promise<Expert[]> {
     LEFT JOIN identity.organisations o ON o.id = e.organisation_id
         WHERE e.published_at IS NOT NULL
         ORDER BY p.display_name ASC
-        LIMIT ${MAX_PAGE_SIZE}`,
+        LIMIT $1`,
+      [MAX_PAGE_SIZE],
     ),
   )
 }
@@ -338,8 +342,8 @@ export async function searchContent(
            OR v.standfirst ILIKE '%' || $1 || '%'
            OR v.plain_text ILIKE '%' || $1 || '%')
        ORDER BY rank DESC, v.published_at DESC NULLS LAST
-       LIMIT ${size} OFFSET ${offset}`,
-      [trimmed],
+       LIMIT $2 OFFSET $3`,
+      [trimmed, size, offset],
     )
 
     return { items, total, page: p, pageSize: size, pageCount: Math.max(1, Math.ceil(total / size)) }

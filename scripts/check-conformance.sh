@@ -44,12 +44,22 @@ else
 fi
 
 # --- rules/database.md 20: no uncontrolled dynamic SQL --------------------------
-# Template literals interpolating into SQL keywords. Parameterised queries use $1.
-if out=$(grep -rnE '(SELECT|INSERT|UPDATE|DELETE)[^`"'"'"']*\$\{' src \
-          --include='*.ts' --include='*.tsx' 2>/dev/null); then
-  bad "possible SQL string interpolation — use parameters"; show "$out"
+# A syntax-tree check, not a line match. It reports an interpolation unless the
+# expression can be shown safe from the tree: a literal, a literal allowlist, a const
+# resolving transitively to one, a joined array of fixed fragments, or a numeric bind
+# placeholder index. See scripts/lib/sql-interpolation-check.mjs for the full set.
+#
+# The teeth are proved by tests/conformance/sql-interpolation.test.ts, which asserts
+# the control still reports known-injectable constructions.
+#
+# This needs node_modules — it parses with the TypeScript compiler rather than
+# guessing with a regular expression. See ADR 0003.
+if [ ! -d node_modules/typescript ]; then
+  bad "SQL interpolation check needs dependencies installed — run npm ci"
+elif out=$(node scripts/lib/sql-interpolation-check.mjs src 2>&1); then
+  ok "no runtime value interpolated into SQL"
 else
-  ok "no SQL string interpolation in application code"
+  bad "runtime value interpolated into SQL — bind it as a parameter"; show "$out"
 fi
 
 # --- rules/database.md 6: a new table must arrive with RLS ----------------------
