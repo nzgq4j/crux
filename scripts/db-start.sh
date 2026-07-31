@@ -12,7 +12,11 @@
 set -euo pipefail
 
 PGBIN="${PGBIN:-/usr/lib/postgresql/16/bin}"
-PGDATA="${PGDATA:-$HOME/.pgdata}"
+
+# The cluster runs as the postgres user, so the data directory must be reachable by
+# it. A home-directory default fails when this script runs as root: /root is mode 700
+# and postgres cannot traverse it, whatever the data directory itself is owned by.
+PGDATA="${PGDATA:-/var/lib/postgresql/data}"
 PGPORT="${PGPORT:-5432}"
 PGDATABASE="${PGDATABASE:-crux}"
 
@@ -20,10 +24,19 @@ as_postgres() {
   if [ "$(id -u)" -eq 0 ]; then su postgres -c "$1"; else bash -c "$1"; fi
 }
 
+# Ownership is settled before any cluster operation, not only on first init, so an
+# existing directory with wrong ownership is corrected too.
+#
+# Written as an if rather than `[ test ] && chown`: that form returns non-zero for a
+# non-root user and, being the final command of the list, aborts the script under
+# `set -e`.
+mkdir -p "$PGDATA"
+if [ "$(id -u)" -eq 0 ]; then
+  chown -R postgres:postgres "$PGDATA"
+fi
+
 if [ ! -d "$PGDATA/base" ]; then
   echo "==> initialising cluster at $PGDATA"
-  mkdir -p "$PGDATA"
-  [ "$(id -u)" -eq 0 ] && chown -R postgres:postgres "$PGDATA"
   as_postgres "$PGBIN/initdb -D $PGDATA -U postgres --auth=trust -E UTF8" >/dev/null
 fi
 
@@ -31,7 +44,9 @@ fi
 as_postgres "sed -i \"s/^#*listen_addresses.*/listen_addresses = 'localhost'/\" $PGDATA/postgresql.conf"
 
 mkdir -p /var/run/postgresql 2>/dev/null || true
-[ "$(id -u)" -eq 0 ] && chown postgres:postgres /var/run/postgresql
+if [ "$(id -u)" -eq 0 ]; then
+  chown postgres:postgres /var/run/postgresql
+fi
 
 if as_postgres "$PGBIN/pg_isready -p $PGPORT" >/dev/null 2>&1; then
   echo "==> already running on port $PGPORT"

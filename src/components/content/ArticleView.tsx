@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { ModuleRenderer } from './ModuleRenderer'
-import { ContentCard, TypeLabel, contentHref } from './ContentCard'
+import { ContentCard, TypeLabel } from './ContentCard'
 import type {
   ContentDetail,
   ContentModule,
