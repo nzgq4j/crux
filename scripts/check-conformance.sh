@@ -23,9 +23,29 @@ else
   ok "privileged client is not used in any Client Component"
 fi
 
-# --- rules/security.md 2 / Block 27: privileged use must be enumerable ----------
-count=$(grep -rn "asServiceRole(" src --include='*.ts' --include='*.tsx' 2>/dev/null | grep -v 'src/lib/db/client.ts' | wc -l | tr -d ' ')
-ok "privileged client call sites: ${count} (each must carry a reason, a permission check and an audit write)"
+# --- rules/security.md 2 / Block 27: privileged access is confined ---------------
+# The privileged path bypasses every row-level policy in the database. It is reached
+# only through src/lib/db/, which is the module that performs the permission check,
+# runs the operation and writes the audit row in one transaction (Workstream 3).
+#
+# A call site elsewhere would be a second, unreviewed privileged path. This check was
+# previously advisory — it counted call sites and always reported ok — which meant it
+# could not stop one appearing.
+if out=$(grep -rn "asServiceRole(" src --include='*.ts' --include='*.tsx' 2>/dev/null \
+          | grep -v '^src/lib/db/'); then
+  bad "privileged access outside src/lib/db/ — route it through the audited path"; show "$out"
+else
+  ok "privileged access is confined to src/lib/db/"
+fi
+
+# The role name itself must not appear outside that module either: setting the role
+# directly would reach service_role without passing through asServiceRole at all.
+if out=$(grep -rn "'service_role'\|\"service_role\"" src --include='*.ts' --include='*.tsx' 2>/dev/null \
+          | grep -v '^src/lib/db/'); then
+  bad "the service_role name appears outside src/lib/db/"; show "$out"
+else
+  ok "the service_role name is confined to src/lib/db/"
+fi
 
 # --- rules/frontend.md 19: no server-only value in a NEXT_PUBLIC_ variable ------
 if out=$(grep -rnE 'NEXT_PUBLIC_[A-Z_]*(SECRET|PRIVATE|PASSWORD|TOKEN|SERVICE_ROLE)' \

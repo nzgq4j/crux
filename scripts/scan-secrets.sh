@@ -25,6 +25,17 @@ PATTERNS=(
   'postgres(ql)?://[^:@/[:space:]]+:[^@/[:space:]]+@'               # DSN with a password
 )
 
+# A DSN is a leak only if it could reach a real database. One whose host is a loopback
+# address or an RFC 2606 reserved name (example.com, .invalid, .test, .local) cannot:
+# those names are reserved precisely so they can be used in documentation and fixtures.
+# This is a property of the host, not of the file it appears in — a real credential is
+# still a finding inside tests/, and a fixture is still checked for every other pattern.
+RESERVED_DSN_HOST='postgres(ql)?://[^:@/[:space:]]+:[^@/[:space:]]+@(localhost|127\.[0-9.]+|\[::1\]|0\.0\.0\.0|([A-Za-z0-9-]+\.)*(example\.(com|net|org)|invalid|test|local|localhost))([^A-Za-z0-9.-]|$)'
+
+drop_reserved_hosts() {
+  grep -vE "$RESERVED_DSN_HOST" || true
+}
+
 EXCLUDES=(
   --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git
   --exclude-dir=coverage --exclude-dir=playwright-report --exclude-dir=test-results
@@ -35,9 +46,7 @@ EXCLUDES=(
 echo "==> scanning working tree"
 for p in "${PATTERNS[@]}"; do
   if out=$(grep -rInE "$p" . "${EXCLUDES[@]}" 2>/dev/null); then
-    # CI service containers use a literal postgres:postgres DSN; that is a well-known
-    # throwaway credential in a workflow file, not a secret.
-    filtered=$(printf '%s\n' "$out" | grep -v 'postgresql://postgres:postgres@localhost' || true)
+    filtered=$(printf '%s\n' "$out" | drop_reserved_hosts)
     if [ -n "$filtered" ]; then
       echo "  LEAK  pattern: $p"
       printf '%s\n' "$filtered" | head -5 | sed 's/^/        /'
@@ -52,7 +61,7 @@ if [ -d .git ] && git rev-parse --git-dir >/dev/null 2>&1; then
   hist_fail=0
   for p in "${PATTERNS[@]}"; do
     if out=$(git log -p --all --no-color 2>/dev/null | grep -InE "^\+.*$p" 2>/dev/null); then
-      filtered=$(printf '%s\n' "$out" | grep -v 'postgresql://postgres:postgres@localhost' || true)
+      filtered=$(printf '%s\n' "$out" | drop_reserved_hosts)
       if [ -n "$filtered" ]; then
         echo "  LEAK  pattern in history: $p"
         printf '%s\n' "$filtered" | head -3 | sed 's/^/        /'

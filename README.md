@@ -15,29 +15,31 @@ version-aware citations, and it is operated through its own administrative dashb
 - Make every quantitative finding traceable to the data and method that produced it.
 - Serve the public research corpus accessibly, and serve machines honestly.
 
-## Architecture summary
+## Architecture
 
-| Layer | Technology |
-|---|---|
-| Application | Next.js App Router, React, TypeScript (strict) |
-| Database | Supabase PostgreSQL with Row Level Security |
-| Authentication | Supabase Auth, including Google OAuth |
-| Storage | Supabase Storage, public and private buckets |
-| Server functions | Supabase Edge Functions |
-| Search | PostgreSQL full-text search with weighted tsvector, plus pgvector |
+The intended architecture, and what is actually built today. The right-hand column is
+the honest one — see [Current status](#current-status) for detail.
+
+| Layer | Technology | Built? |
+|---|---|---|
+| Application | Next.js 16 App Router, React 19, TypeScript strict | Yes — 17 public read-only routes |
+| Database | Supabase PostgreSQL with Row Level Security | Yes — 12 schemas, 65 tables, 118 policies |
+| Data access | PostgREST (deployed) and direct SQL (local) | Yes — both, one RLS model |
+| Authentication | Supabase Auth, including Google OAuth | **No** — role model exists, no sign-in flow |
+| Storage | Supabase Storage, public and private buckets | **No** — `assets` schema exists, no buckets |
+| Server functions | Supabase Edge Functions | **No** |
+| Search | Weighted tsvector plus pgvector | **Partly** — `search` schema and pgvector exist; the site searches with `ILIKE` over title, standfirst and body |
+| Administrative dashboard | `/admin` | **No** — the route does not exist |
 
 ### Supabase-native CMS
 
-The content management system is built on this project's own Supabase PostgreSQL and
-Storage. **No paid or proprietary CMS product or component suite is used.** Content
-types, structured modules, versions, taxonomy, workflow, and assets are all first-class
-database objects governed by RLS.
+The content model is built on this project's own PostgreSQL. **No paid or proprietary
+CMS product or component suite is used.** Content types, structured modules, versions,
+taxonomy, workflow and assets are first-class database objects governed by RLS.
 
-### Functional administrative dashboard
-
-`/admin` is an operating tool, not a demonstration. Every surface reads live queried
-data, every mutation re-verifies permission on the server and writes an audit row, and
-no metric is hard-coded.
+What that means today: the schema, constraints, triggers and policies are implemented
+and tested. **There is no authoring interface.** Content reaches the database through
+`supabase/seed.sql`, and editing it means writing SQL.
 
 ## Prompt-block execution model
 
@@ -57,18 +59,80 @@ Start at `CLAUDE.md`.
 
 ## Current status
 
-**Architecture installed. Application implementation has not begun.**
+**A public read-only reading surface over a complete, policy-governed database. No
+authoring, no accounts, no administrative surface.**
 
-There is no framework installation, no package manifest, no Supabase configuration, no
-migrations, no tests, and no CI/CD in this repository yet. The next eligible block is
-**Block 01 — Repository Assessment**.
+Verified on the commit that introduced this section — every figure below was produced
+by running the command, not by reading the code.
 
-See `docs/implementation-status.md` for the live per-block state.
+### What is built
+
+| Area | State |
+|---|---|
+| Next.js application | 17 public routes, Server Components, TypeScript strict, Tailwind v4 tokens |
+| Database | 18 migrations applying clean to an empty cluster; 12 schemas; 65 tables; 118 RLS policies; 14 roles; 26 permissions; 59 grants |
+| Data access | PostgREST as `anon` in deployment, direct SQL locally — the same RLS policies govern both |
+| Content model | Typed JSON modules with stable fragment identifiers, immutable published versions enforced by trigger, append-only audit |
+| Privileged access | Permission check, operation and audit write in one transaction; confined to `src/lib/db/` by a conformance rule |
+| Configuration | Split public/server environment modules; `server-only` boundary; validated `DATABASE_URL` that refuses local addresses and placeholder credentials outside development |
+| Tests | 9 files — RLS and denied-access, database invariants, conformance teeth, environment validation |
+| CI | Lint, types, lockfile consistency, unit tests, build, clean-database migrations, schema integrity, database and RLS suites, secret scan, dependency audit, bundle scan, architecture conformance |
+
+### What is not built
+
+These are absent, not partially working. Nothing in the interface pretends otherwise.
+
+- **Authentication.** No sign-in, no session handling, no OAuth. The role model,
+  permissions and policies exist and are tested, but nothing authenticates a user.
+  `/account` is a placeholder that says so.
+- **Administrative dashboard.** `/admin` does not exist.
+- **Structured editor.** No authoring interface. Content enters through seed SQL.
+- **Editorial workflow.** The `workflow` schema, its states and transitions exist and
+  are validated; no interface drives them.
+- **Entitlements and downloads.** No signed URLs, no storage buckets, no gating.
+- **Newsletter.** The `subscriptions` schema exists; nothing subscribes.
+- **Hybrid search.** The site uses `ILIKE`. The `search` schema and pgvector are in
+  place but unused by the reading surface.
+- **Claims, evidence and citation export.** The `knowledge` schema exists; no surface
+  reads or exports from it.
+- **Observability, rate limiting, provider integrations.**
+
+### Known production blockers
+
+1. **The deployed database carries only part of the schema.** The Supabase project has
+   `cms`, `taxonomy`, `identity`, `accounts` and `audit`. The `workflow`, `knowledge`,
+   `assets`, `subscriptions`, `search` and `analytics` migrations have never been
+   applied there.
+2. **`CRUX_ENV` is not set in the deployment.** It now fails closed — an unset value on
+   a production build resolves to `production` — but the deployment should set it
+   explicitly rather than rely on inference.
+3. **No migration ledger.** `db:migrate` applies every migration in order and is not
+   re-runnable against a populated database, so there is no way to apply only new
+   migrations to an existing environment. `db:reset` is the only supported path, and it
+   destroys data.
+4. **Accessibility is unverified.** WCAG 2.2 AA is the target. No automated check runs
+   in CI and no manual keyboard or screen-reader pass has been performed.
+5. **GitHub Actions are pinned to tags, not commit SHAs.**
+
+See `docs/known-limitations.md` for the full register and `docs/implementation-status.md`
+for per-block state.
 
 ## Repository layout
 
 ```
 CLAUDE.md                                  Root project instructions
+src/
+  app/                                     17 public routes (App Router)
+  components/                              Content rendering and UI state components
+  lib/
+    content/                               PostgREST and direct-SQL backends, one interface
+    db/                                    Pooled access; the only privileged path
+    env/                                   public, server and mode configuration modules
+supabase/
+  migrations/                              18 timestamp-ordered migrations
+  seed.sql                                 Deterministic demonstration content
+tests/                                     RLS, database, conformance, environment
+scripts/                                   Database, scanning and conformance tooling
 .claude/
   architecture-manifest.md                 Installed blocks, hashes, agents, gates
   prompts/                                 Blocks 00–28, the implementation contracts
@@ -113,13 +177,58 @@ the conditions for accurate attribution. They do not compel it.
 
 ## Local setup
 
-Not yet available. Setup instructions will be written by Block 04 into
-`docs/local-development.md`, and every command in that document will have been executed
-before it is published.
+Requires Node 22+ and PostgreSQL 16 with the `vector` extension. Every command below
+was executed as written on a clean checkout.
+
+```bash
+npm ci                  # install from the lockfile
+npm run db:start        # initialise and start a local cluster
+npm run db:reset        # drop, apply 18 migrations, seed demonstration content
+npm run dev             # http://localhost:3000
+```
+
+`db:reset` is destructive by design — it drops and recreates the database. Use
+`db:migrate` only against an empty database; it is not re-runnable (see known blockers).
+
+Copy `.env.example` to `.env.local` and fill it in. It contains variable names only,
+never values. With no Supabase variables set the application reads the local cluster
+over a direct SQL connection; with `NEXT_PUBLIC_SUPABASE_URL` and
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` set it reads Supabase over PostgREST. Both paths
+are governed by the same RLS policies.
+
+### Scripts
+
+| Command | Purpose |
+|---|---|
+| `npm run dev` / `build` / `start` | Next.js development, production build, production server |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run lint` | ESLint |
+| `npm test` | Full suite (requires a running, migrated database) |
+| `npm run test:unit` | Environment and conformance tests only — no database needed |
+| `npm run test:db` / `test:rls` | Database invariants / RLS and denied-access |
+| `npm run db:start` / `db:stop` | Start or stop the local cluster |
+| `npm run db:migrate` / `db:seed` / `db:reset` | Apply migrations / seed / rebuild from empty |
+| `npm run db:verify` | Schema integrity: RLS coverage, `SECURITY DEFINER` search paths, FK indexes, orphan permissions |
+| `npm run check:conformance` | Architecture rules a linter cannot express |
+| `npm run scan:secrets` / `scan:bundle` | Secret scan over history / server-only identifiers in client output |
+| `npm run verify` | typecheck, lint, conformance, secret scan, tests |
+
+### Test coverage
+
+Nine test files. The suite covers RLS and denied-access boundaries, published-version
+immutability, search leakage, privileged-access authorization and audit, database URL
+validation, the client/server environment boundary, SQL-interpolation conformance, and
+query parameterisation.
+
+There are **no** end-to-end tests, no accessibility tests, and no rendering tests. The
+reading surface is verified by the build succeeding and by manual inspection, which is
+not the same as being tested.
 
 ## Links
 
 - [Implementation status](docs/implementation-status.md)
+- [Known limitations](docs/known-limitations.md)
+- [Local development](docs/local-development.md)
 - [Architecture manifest](.claude/architecture-manifest.md)
 - [Block dependency matrix](docs/architecture-block-dependencies.md)
 - [Requirements traceability](docs/requirements-traceability.md)

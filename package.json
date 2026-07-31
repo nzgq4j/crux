@@ -19,6 +19,7 @@
     "db:reset": "bash scripts/db-reset.sh",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:unit": "vitest run tests/env tests/conformance",
     "test:db": "vitest run tests/db",
     "test:rls": "vitest run tests/rls",
     "test:e2e": "playwright test",

@@ -12,7 +12,7 @@ import type {
   VersionHistoryEntry,
 } from './types'
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, bound } from './types'
-import { publicEnv } from '@/lib/env'
+import { publicEnv } from '@/lib/env/public'
 
 /**
  * PostgREST backend (Block 03 boundary).

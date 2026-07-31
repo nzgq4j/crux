@@ -49,6 +49,46 @@ yet started.
 - **Remediation:** A dedicated check for PostgREST filter construction, should that
   surface grow beyond the current read paths.
 
+## Database operations
+
+### No migration ledger
+
+- **Where:** `scripts/db-migrate.sh`.
+- **What:** The runner applies every migration in timestamp order and records nothing.
+  It is not re-runnable against a populated database — the second run fails on the
+  first `CREATE TABLE`. There is no way to apply only new migrations to an existing
+  environment.
+- **Impact:** **A production blocker.** `db:reset` is the only supported path and it
+  destroys data, so there is currently no mechanism for evolving a deployed database.
+  It also makes `rules/database.md` 4 — rehearse each migration against
+  production-equivalent data — impossible to satisfy.
+- **Remediation:** A ledger table recording applied filenames and checksums, with the
+  runner skipping what is recorded and refusing a file whose checksum has changed.
+  Not implemented; deliberately out of scope for the foundation remediation pass.
+
+### GitHub Actions are pinned to tags, not commit SHAs
+
+- **Where:** `.github/workflows/ci.yml`, eight `uses:` references.
+- **What:** `actions/checkout@v5` and `actions/setup-node@v5` resolve a mutable tag. A
+  compromised or retagged action would execute in CI with repository read access.
+- **Impact:** Supply-chain exposure, bounded by the workflow's least-privilege
+  `contents: read` permission.
+- **Remediation:** Pin each to the immutable commit SHA of the intended release, with
+  the version as a trailing comment. This was attempted and could not be completed:
+  the sandbox cannot reach the GitHub API for repositories outside this session's
+  scope, and inventing a SHA would break CI outright. Resolve with, per action:
+  `gh api repos/actions/checkout/git/ref/tags/v5 --jq .object.sha`
+
+### CRUX_ENV is not set in the deployment
+
+- **Where:** Vercel project configuration.
+- **What:** `CRUX_ENV` is unset. It now fails closed — an unset value on a production
+  build resolves to `production` — so the strict checks do apply, but by inference
+  rather than by declaration.
+- **Impact:** Low now that the default is fail-closed; previously every deployment
+  check keyed on this variable was silently off.
+- **Remediation:** Set `CRUX_ENV=production` explicitly in the deployment environment.
+
 ## Content rendering
 
 ### Figure modules render with a plain `<img>`
