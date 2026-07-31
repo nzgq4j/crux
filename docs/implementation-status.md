@@ -101,6 +101,28 @@ authentication, no production hardening.
 | 4 — CI baseline | Added lockfile consistency, a database-free unit test stage, and per-job least-privilege permissions. Actions remain tag-pinned — see known limitations. |
 | 5 — Documentation reconciliation | README rewritten. It previously described `/admin` as "an operating tool, not a demonstration" while `/admin` did not exist, and simultaneously claimed implementation had not begun. |
 
+## Content Corpus Initialization
+
+A validation corpus of fourteen Crucible Insight research documents (fifteen uploads,
+one exact duplicate) was analysed on 31 July 2026. The analysis and its eleven
+deliverables are in [`docs/corpus/`](corpus/README.md).
+
+**Nothing was imported and no schema was changed.** The corpus was read from the
+upload directory; the database-infrastructure freeze remains in force.
+
+What it established:
+
+| | |
+|---|---|
+| The content model holds | Typed modules, stable fragments, immutable versions, nine claim types and the declared state machine all survive contact with real documents. Thirteen structural properties map to existing schema elements without change. |
+| Eight schema recommendations | Two are module-catalogue rows; five are additive; one relaxes a `NOT NULL` behind an XOR check. All eight are demonstrated by named documents. See [corpus/02](corpus/02-schema-validation.md) §2.6. |
+| Three gates block the whole corpus, correctly | `methodology_present` and `limitations_present` refuse all fourteen (no document has either section); `separation_of_duties` cannot be satisfied while the organisation has one identifiable person. None of the three is wrong. See [corpus/06](corpus/06-workflow-validation.md). |
+| The expensive part is editorial, not engineering | Over 300 source entries corpus-wide and an estimated 40–80 claims per document. Full ingestion is a multi-week editorial programme. |
+| Seven decisions block the next step | Recorded as Band 0 of [corpus/09](corpus/09-product-backlog.md); six of them need the client. |
+
+The recommended first document to publish end-to-end is the Sensor Fusion white paper
+([corpus/11](corpus/11-implementation-sequence.md) §3).
+
 ## Next Steps, in Dependency Order
 
 1. **Block 08** — the atomic publication transaction. Everything downstream depends on
@@ -109,3 +131,6 @@ authentication, no production hardening.
 3. **Block 09/10** — the administrative surface and structured editor.
 4. **Block 11** — the remaining public surfaces, especially the report reading path.
 5. **Block 22/20** — integration, E2E and accessibility tiers, and CI.
+
+The corpus analysis does not change this order. It supplies the content that makes
+steps 2–4 demonstrable, and the Band 0 decisions that must be settled alongside them.

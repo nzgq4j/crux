@@ -103,3 +103,20 @@ yet started.
   not be described as achieved.
 - **Remediation:** Block 20 introduces the accessibility gate. Until then, record the
   conformance level actually achieved, which is currently unverified.
+
+### The validation corpus does not exercise nine platform behaviours
+
+- **Where:** [`docs/corpus/08-acceptance-tests.md`](corpus/08-acceptance-tests.md)
+  §8.11.
+- **What:** The fourteen-document corpus is finished research with no editorial
+  history, so it supplies no fixture for scheduling, withdrawal and the public
+  tombstone, `changes_requested` and review iteration, routine supersession, chart
+  modules, entitlement-gated downloads, a second locale, inter-document `cites`
+  relationships, or a figure-heavy document that would stress the alternative-text
+  gate. Only three images exist across all fourteen documents.
+- **Impact:** A test suite built from the corpus alone would be green while having
+  tested none of these. Corpus-derived coverage must not be described as
+  comprehensive.
+- **Remediation:** Synthetic fixtures for the workflow states — a review history is
+  not research content, so inventing one fabricates nothing. Tracked as N04 in
+  [`docs/corpus/09-product-backlog.md`](corpus/09-product-backlog.md).
