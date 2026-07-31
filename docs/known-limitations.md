@@ -51,33 +51,22 @@ yet started.
 
 ## Database operations
 
-### No migration ledger
+### Out-of-order migrations are applied, not rejected
 
-- **Where:** `scripts/db-migrate.sh`.
-- **What:** The runner applies every migration in timestamp order and records nothing.
-  It is not re-runnable against a populated database — the second run fails on the
-  first `CREATE TABLE`. There is no way to apply only new migrations to an existing
-  environment.
-- **Impact:** **A production blocker.** `db:reset` is the only supported path and it
-  destroys data, so there is currently no mechanism for evolving a deployed database.
-  It also makes `rules/database.md` 4 — rehearse each migration against
-  production-equivalent data — impossible to satisfy.
-- **Remediation:** A ledger table recording applied filenames and checksums, with the
-  runner skipping what is recorded and refusing a file whose checksum has changed.
-  Not implemented; deliberately out of scope for the foundation remediation pass.
+- **Where:** `scripts/lib/migrate.mjs`.
+- **What:** A migration whose identifier sorts *before* an already-applied one is
+  still unapplied, so the runner applies it — after the later migration has already
+  run. This happens when two branches add migrations concurrently and the one merged
+  second carries an earlier timestamp.
+- **Impact:** The resulting schema may differ from one built from empty, and the
+  divergence is silent.
+- **Remediation:** Refuse an unapplied migration that sorts before the highest applied
+  identifier, with an explicit override for the case where the operator knows it is
+  safe. Not implemented; the runner records enough to detect it, and
+  `tests/migrations/runner.test.ts` documents the current behaviour rather than
+  pretending it is correct.
 
-### GitHub Actions are pinned to tags, not commit SHAs
 
-- **Where:** `.github/workflows/ci.yml`, eight `uses:` references.
-- **What:** `actions/checkout@v5` and `actions/setup-node@v5` resolve a mutable tag. A
-  compromised or retagged action would execute in CI with repository read access.
-- **Impact:** Supply-chain exposure, bounded by the workflow's least-privilege
-  `contents: read` permission.
-- **Remediation:** Pin each to the immutable commit SHA of the intended release, with
-  the version as a trailing comment. This was attempted and could not be completed:
-  the sandbox cannot reach the GitHub API for repositories outside this session's
-  scope, and inventing a SHA would break CI outright. Resolve with, per action:
-  `gh api repos/actions/checkout/git/ref/tags/v5 --jq .object.sha`
 
 ### CRUX_ENV is not set in the deployment
 
