@@ -1,0 +1,111 @@
+name: Security issue
+description: Report a security concern in Crux
+labels: ["security", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Read this first
+
+        **GitHub issues are public. Do not post exploit details here.**
+
+        If you have found a vulnerability that could be exploited — an authorization
+        bypass, a way to read draft or private content, a way to escalate privilege, a
+        way to reach another account, an exposed credential, or an injection — please
+        **report it privately** instead:
+
+        - Use GitHub's private vulnerability reporting on this repository
+          (Security → Report a vulnerability), or
+        - Email the maintainers directly.
+
+        Use this public template only for security *hygiene* matters that are safe to
+        discuss openly: a missing header, an outdated dependency, a hardening
+        suggestion, or a question about the security model.
+
+        We will not ask you to post proof-of-concept code, reproduction steps for an
+        exploitable weakness, or affected credentials in this public thread.
+
+  - type: checkboxes
+    id: disclosure-check
+    attributes:
+      label: Disclosure check
+      options:
+        - label: >
+            I confirm this report contains no exploit details, no proof-of-concept, and
+            no credentials, tokens, or personal data.
+          required: true
+        - label: >
+            I understand that an exploitable vulnerability should be reported privately,
+            not here.
+          required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - Missing or misconfigured security header
+        - Content Security Policy concern
+        - Dependency with a known vulnerability
+        - Rate limiting or abuse control gap
+        - Hardening suggestion
+        - Question about the security model
+        - Documentation error in security guidance
+        - Other (non-exploitable)
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: >
+        Describe the concern at a level that lets a maintainer investigate, without
+        providing a working attack. Reference the control or document involved.
+    validations:
+      required: true
+
+  - type: input
+    id: affected-area
+    attributes:
+      label: Affected area
+      description: >
+        Route, endpoint, block, or document — for example "/api/v1 responses" or
+        "docs/security-hardening.md". Do not include identifiers of private resources.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment observed
+      options:
+        - Local
+        - Development
+        - Staging
+        - Production
+        - Not environment-specific (code or documentation review)
+    validations:
+      required: true
+
+  - type: input
+    id: dependency
+    attributes:
+      label: Dependency and advisory identifier
+      description: For dependency reports — the package, the version, and the CVE or advisory ID.
+    validations:
+      required: false
+
+  - type: textarea
+    id: suggested-remediation
+    attributes:
+      label: Suggested remediation
+      description: Optional. What you think the fix or hardening step should be.
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. Reports of this kind are genuinely useful, and reporting
+        responsibly is appreciated.

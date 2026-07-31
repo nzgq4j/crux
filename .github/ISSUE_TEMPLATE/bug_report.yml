@@ -1,0 +1,144 @@
+name: Bug report
+description: Report incorrect behaviour in Crux
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug.
+
+        **If this is a security vulnerability, stop and use the security issue
+        template instead.** Do not describe an exploitable weakness here — this
+        template is public.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What went wrong, in one or two sentences.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps, starting from a known state.
+      placeholder: |
+        1. Sign in as a user holding the `editor` role
+        2. Open /admin/content and filter by state "in review"
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: Include the exact error message if there is one.
+    validations:
+      required: true
+
+  - type: input
+    id: request-id
+    attributes:
+      label: Request identifier
+      description: >
+        If the response returned a request identifier header, paste it here — it
+        correlates directly to the server logs.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - Public experience
+        - Search
+        - Reports and downloads
+        - Accounts and authentication
+        - Newsletter
+        - Administrative dashboard
+        - Structured editor
+        - Editorial workflow
+        - Citations
+        - Public API
+        - Machine discovery (sitemaps, feeds, structured data)
+        - Deployment or operations
+        - Other / not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - Local
+        - Development
+        - Staging
+        - Production
+    validations:
+      required: true
+
+  - type: input
+    id: role
+    attributes:
+      label: Role held by the affected account
+      description: e.g. anonymous, registered_user, editor, publisher. Do not include account credentials.
+    validations:
+      required: false
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+    validations:
+      required: false
+
+  - type: dropdown
+    id: accessibility
+    attributes:
+      label: Is this an accessibility defect?
+      description: >
+        Choose yes if the problem affects keyboard operation, screen-reader output,
+        focus, contrast, zoom, or reflow.
+      options:
+        - "No"
+        - "Yes"
+    validations:
+      required: true
+
+  - type: input
+    id: assistive-tech
+    attributes:
+      label: Assistive technology used
+      description: If this is an accessibility defect, name the screen reader and browser combination.
+    validations:
+      required: false
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: Who is affected and how badly. Note any data-integrity or publication impact.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Before submitting
+      options:
+        - label: This is not a security vulnerability
+          required: true
+        - label: I have not included credentials, tokens, signed URLs, or personal data
+          required: true

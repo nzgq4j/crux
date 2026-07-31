@@ -1,0 +1,102 @@
+name: Feature request
+description: Propose new or changed functionality for Crux
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Crux is built from the block architecture in `.claude/prompts/`. A proposal
+        that fits an existing block is usually easier to schedule than one that
+        introduces a new capability, so say which block it touches if you can.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: >
+        What is hard, impossible, or wrong today? Describe the problem, not the
+        solution you have in mind.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: What you would like to happen.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: user-class
+    attributes:
+      label: Primary user class affected
+      multiple: true
+      options:
+        - Anonymous visitor
+        - Registered user
+        - Subscriber
+        - Research member
+        - Contributor
+        - Author
+        - Reviewer
+        - Editor
+        - Publisher
+        - Taxonomy manager
+        - Asset manager
+        - Administrator
+    validations:
+      required: true
+
+  - type: input
+    id: block
+    attributes:
+      label: Related architecture block
+      description: >
+        The block in `.claude/prompts/` this most likely belongs to, e.g. "15 — Search
+        and Retrieval". Leave blank if unsure.
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Including doing nothing, and why that is not sufficient.
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: How would we know it works?
+      description: >
+        Describe the observable outcome. A requirement that cannot be observed cannot
+        be tested, and will be sent back for rework.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: considerations
+    attributes:
+      label: Does this proposal touch any of the following?
+      description: Tick everything that applies. This drives which reviewers are required.
+      options:
+        - label: Authorization, roles, or permissions
+        - label: Row Level Security or data visibility
+        - label: Published-version immutability or the citation record
+        - label: Provenance, claims, or evidence
+        - label: Private assets or download entitlements
+        - label: Personal data or consent
+        - label: A user-facing surface (accessibility review required)
+        - label: A new external service dependency
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Before submitting
+      options:
+        - label: This does not require fabricating research claims, sources, citations, or credentials
+          required: true
+        - label: This does not rely on a claim that any technical measure guarantees citation by an LLM
+          required: true

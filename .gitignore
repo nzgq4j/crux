@@ -34,3 +34,37 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# --- Added by Crux architecture initialization -------------------------------
+# The entries above are preserved from the original repository template.
+
+# dependencies (non-root)
+node_modules/
+
+# supabase local state
+.supabase/
+supabase/.branches/
+supabase/.temp/
+
+# testing and reports
+coverage/
+playwright-report/
+test-results/
+
+# logs
+*.log
+pnpm-debug.log*
+
+# os
+Thumbs.db
+
+# editors
+.vscode/
+.idea/
+
+# keys and certificates — never commit these
+*.key
+*.p12
+*.pfx
+
+# Note: `.env.example` is intentionally tracked. It contains variable names only.
