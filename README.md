@@ -106,13 +106,11 @@ These are absent, not partially working. Nothing in the interface pretends other
 2. **`CRUX_ENV` is not set in the deployment.** It now fails closed — an unset value on
    a production build resolves to `production` — but the deployment should set it
    explicitly rather than rely on inference.
-3. **No migration ledger.** `db:migrate` applies every migration in order and is not
-   re-runnable against a populated database, so there is no way to apply only new
-   migrations to an existing environment. `db:reset` is the only supported path, and it
-   destroys data.
-4. **Accessibility is unverified.** WCAG 2.2 AA is the target. No automated check runs
+3. **Accessibility is unverified.** WCAG 2.2 AA is the target. No automated check runs
    in CI and no manual keyboard or screen-reader pass has been performed.
-5. **GitHub Actions are pinned to tags, not commit SHAs.**
+4. **Out-of-order migrations are applied rather than rejected.** A migration merged
+   with an earlier timestamp than one already applied will run after it. See
+   `docs/known-limitations.md`.
 
 See `docs/known-limitations.md` for the full register and `docs/implementation-status.md`
 for per-block state.
@@ -187,8 +185,11 @@ npm run db:reset        # drop, apply 18 migrations, seed demonstration content
 npm run dev             # http://localhost:3000
 ```
 
-`db:reset` is destructive by design — it drops and recreates the database. Use
-`db:migrate` only against an empty database; it is not re-runnable (see known blockers).
+`db:migrate` is incremental and safe to run repeatedly, including against a database
+with data in it: a ledger in `private.schema_migrations` records what has been applied,
+only missing migrations run, and a migration edited after it was applied is a hard
+failure. `db:reset` is destructive — it drops and recreates the database — and refuses
+to run outside development and test.
 
 Copy `.env.example` to `.env.local` and fill it in. It contains variable names only,
 never values. With no Supabase variables set the application reads the local cluster
@@ -206,8 +207,13 @@ are governed by the same RLS policies.
 | `npm test` | Full suite (requires a running, migrated database) |
 | `npm run test:unit` | Environment and conformance tests only — no database needed |
 | `npm run test:db` / `test:rls` | Database invariants / RLS and denied-access |
+| `npm run test:migrations` | Migration runner: incremental, drift, concurrency |
 | `npm run db:start` / `db:stop` | Start or stop the local cluster |
-| `npm run db:migrate` / `db:seed` / `db:reset` | Apply migrations / seed / rebuild from empty |
+| `npm run db:migrate` | Apply unapplied migrations. Incremental, non-destructive, safe to rerun |
+| `npm run db:status` | Which migrations are applied, which are pending, and any drift |
+| `npm run db:migrate:verify` | Verify the ledger against the files. Read-only; safe against production |
+| `npm run db:seed` | Seed demonstration content |
+| `npm run db:reset` | **Destructive.** Drop, recreate, migrate, seed. Local development only |
 | `npm run db:verify` | Schema integrity: RLS coverage, `SECURITY DEFINER` search paths, FK indexes, orphan permissions |
 | `npm run check:conformance` | Architecture rules a linter cannot express |
 | `npm run scan:secrets` / `scan:bundle` | Secret scan over history / server-only identifiers in client output |
