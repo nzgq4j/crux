@@ -8,7 +8,8 @@
 
 **The complete architecture pack was installed.** All 29 prompt blocks (00–28), all 12
 specialist agent contracts, and all 9 engineering rule files are present, complete, and
-independently usable. One source gap is recorded below rather than papered over.
+independently usable. One source gap was recorded at installation and has since been
+closed; see **Missing source material**.
 
 ## Repository resolved
 
@@ -66,31 +67,82 @@ supporting material was validated as follows:
 | Independent-review procedure | Yes | Reviewer assignments and the no-self-approval rule supplied |
 | Parallel-execution restrictions | Yes | Extended with explicit concurrent groups and sequential pairs |
 | Context-control rules | Yes | |
-| Final implementation checklist | **Partial** | See the gap below |
+| Final implementation checklist | Yes | Supplied verbatim after installation; see Closure — 2026-07-31 |
 
 ## Missing source material
 
-One gap, recorded rather than invented:
+**None outstanding.** One gap was recorded at installation; it has since been closed.
+
+### The gap as originally recorded
 
 > **Block 26 — the verbatim "Section 45" checklist text.** The instruction directed
 > that "the approved final Section 45 checklist" be installed *in full*, but the
 > verbatim prose of that section was not included in the instruction. What *was*
-> supplied — and has been preserved exactly — is the list of thirteen coverage areas the
-> checklist must cover (database, authentication, authorization, backend, frontend,
-> search, citations, provenance, audit, storage, RLS, deployment, post-deployment
-> validation) and the ten final completion controls.
+> supplied — and was preserved exactly — is the list of thirteen coverage areas the
+> checklist must cover and the ten final completion controls.
 
-**Action taken:** Block 26 was constructed from those supplied coverage areas and the
-ten completion controls verbatim. A **Source Note** at the top of
-`.claude/prompts/26-implementation-checklist.md` states this plainly and instructs
-whoever holds the verbatim Section 45 to reconcile against it and record any difference
-here.
+Installation proceeded rather than stopping because the block's *requirements* were
+supplied and only the original prose was not. No requirement was invented, and the gap
+was disclosed in the block file, the manifest, and this report.
 
-**Why installation proceeded rather than stopping:** the missing-source rule exists to
-prevent fabricating a block's requirements. Here the block's requirements *were*
-supplied — only the original prose was not. No requirement was invented, and the gap is
-disclosed in three places: this report, the manifest's Known Source Gaps table, and the
-block file itself.
+### Closure — 2026-07-31
+
+The verbatim Section 45 text was subsequently supplied and installed. Actions taken:
+
+- **Block 26 rebuilt** to reproduce Section 45's five-phase structure with its 45.x.y
+  numbering intact, and to carry the sequential phase-gate rule ("each phase validated
+  before proceeding") as an explicit execution requirement. The Source Note recording
+  the gap was removed, since it no longer applies.
+- **Reconciliation applied across the pack.** Section 45 supplied exact identifiers
+  that eleven other files had described only generically. Blocks 04, 05, 06, 07, 08,
+  13, 15, 16, 17, 19 and `.claude/rules/backend.md` were updated to use them literally.
+- **Five conflicts resolved and recorded**, each in favour of the superset or the
+  explicitly reconciled position rather than by silently dropping one side: the claim
+  taxonomy (nine storage types mapped to five §45 evidence classes), citation formats
+  (eight retained, §45's five mandatory), completion controls (ten retained, §45's six
+  marked as core), ranking signals (conformed to §45's five), and the dual purpose of
+  the `identity` schema.
+- **Nine new requirements adopted** from Section 45 that the earlier source had not
+  contained.
+
+The full reconciliation record, including the identifier table and the conflict
+resolutions, is in the manifest under **Section 45 Reconciliation**. Architecture
+version raised to 1.1.0.
+
+**Nothing in Section 45 was dropped, weakened, or paraphrased where it gave an exact
+name.**
+
+### Reconciliation verification — 2026-07-31
+
+The reconciliation was independently verified by seven agents: one per Section 45
+phase, checking every source line item against both the checklist and its owning block
+file; plus two cross-checkers hunting contradictions, stale references, and omissions.
+
+**34 findings, all resolved.** Notably:
+
+| Severity | Count | Nature |
+|---|---|---|
+| Blocking | 7 | One genuine coverage hole — `audit.events` was protected and referenced everywhere but never *created* by any block — plus six contradictions the reconciliation edits themselves introduced |
+| Major | 16 | Checklist items with no owning requirement in any block file; generic references left behind where an exact name had been adopted; registers left stale |
+| Minor | 11 | Fidelity and anchoring: abbreviated table names, missing acceptance criteria for newly added requirements, cross-reference ordering |
+
+The six self-inflicted contradictions are worth recording, because they show the class
+of error a reconciliation produces: making a rule configurable in one file while
+leaving the absolute version of that rule standing in the same file's tests and
+acceptance criteria, and in the rules library that binds every agent. Specifically —
+claim-to-source linkage was made per-content-type configurable in Block 16 while
+Block 16's own test and acceptance rows, and `rules/content-modeling.md` rule 18, still
+asserted it absolutely; citation formats gained a deferral clause that contradicted the
+block's own scope, testing, and acceptance statements; a cross-reference was written to
+"§17.2 of the platform brief", a document that does not exist in this repository; the
+Section 45 table list in Block 08 read as exhaustive and silently dropped three tables
+that block requires; and the schema count disagreed between Block 04 (thirteen created)
+and Block 26 (fourteen listed, including Supabase-managed `auth`).
+
+All are fixed. A second concern the verification raised — that Blocks 06 and 17
+referenced `docs/known-limitations.md`, which Block 24 does not create until much later
+— was resolved by pointing both at `docs/requirements-traceability.md` instead, which
+exists from initialization and which Block 24 reconciles into known limitations.
 
 ## Existing project state
 
@@ -173,7 +225,12 @@ owning block.
 
 ## Conflicts
 
-**Resolved:** one. The initialization instruction proposed the branch name
+**Resolved:** six. Five arose during the Section 45 reconciliation — the claim
+taxonomy, citation formats, completion controls, ranking signals, and the dual purpose
+of the `identity` schema — and are recorded in the manifest's Section 45 Reconciliation
+table. The sixth is the branch-name conflict below.
+
+The initialization instruction proposed the branch name
 `chore/initialize-crux`, while this session's standing branch requirement designates
 `claude/initialize-crux-repository-w49p3o`. The standing requirement was followed, since
 pushing to a different branch without permission is prohibited. All other constraints

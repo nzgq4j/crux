@@ -53,9 +53,18 @@ Implement each surface with real data and correct empty and error states:
    taxonomy.
 9. **Technology hubs** — technology-scoped landing surfaces on the same basis.
 10. **Topics** — topic term surfaces listing associated content.
-11. **Expert profiles** — expert identity, affiliation, disclosures, expertise terms,
-    external identifiers, and authored content.
-12. **Search** — the public search surface consuming Block 15.
+11. **Expert / author profiles** (§45.4.1 "author pages") — expert identity,
+    affiliation, disclosures, expertise terms, external identifiers, and authored
+    content. State explicitly whether every byline author receives a page or only
+    designated experts; if only experts, non-expert bylines must still resolve to a
+    stable, linkable author reference so citations do not dead-end.
+12. **Search** (§45.4.4) — the public search surface consuming Block 15, covering four
+    elements: the query input with full-text behaviour; keyboard-operable filters and
+    facets; **ranking display**, meaning result order reflects the Block 15 hybrid
+    score with the active sort or relevance basis stated visibly and programmatically,
+    so a user can tell whether they are seeing relevance or recency; and
+    permission-safe results, where counts and facets reflect only what the user may
+    read.
 13. **Subscriptions** — newsletter subscription and preference surfaces consuming
     Block 14.
 14. **Organization identity** — about, mission, and organisational information.
@@ -75,6 +84,12 @@ Implement each surface with real data and correct empty and error states:
   content.
 - Server Components by default. Client Components only for genuinely interactive
   affordances.
+- **Stable fragment navigation (§45.4.1).** Every module's stable fragment identifier
+  from Block 05 is emitted as the `id` of its rendered section, so that a citation
+  addressing a section resolves to it. Fragment identifiers survive re-rendering and
+  pagination; a deep link to a section must not break because the page was rebuilt.
+  Section navigation and in-page anchors use these identifiers rather than
+  position-derived ones.
 - Canonical URLs are single and stable per version; alternates are declared, not
   duplicated.
 - `cms.redirects` is honoured with the recorded status code.

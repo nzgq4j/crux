@@ -33,7 +33,10 @@
     permitted where a controlled vocabulary exists.
 14. Term creation, merge, and deprecation are governed operations, not incidental
     writes.
-15. Term merges preview their content impact before applying.
+15. Term merges preview their content impact before applying, and create a redirect
+    from the merged term so no existing URL breaks.
+15a. Orphan terms — those with no content assignment and no child term — are detected
+    and reported, never silently retained.
 
 ## Claims and evidence
 
@@ -41,9 +44,17 @@
     derived finding, quantitative finding, interpretation, forecast, recommendation,
     assumption, opinion, or definition.
 17. Claim type is an enforced constraint, not advisory metadata.
-18. Observed facts require a source. Quantitative findings require an analysis run
-    resolving to dataset versions and variables. Interpretations, recommendations, and
+18. Claim-to-source linkage follows the **minimum evidence standard declared on the
+    content type** in `cms.content_types`. Where that standard requires linkage,
+    observed facts require a source and interpretations, recommendations, and
     forecasts reference their basis.
+18a. Quantitative findings **always** require an analysis run resolving to dataset
+    versions and variables. This requirement is absolute and is never configurable
+    downward by a content type.
+18b. Every claim carries exactly one of the nine storage types, and the five §45
+    evidence classes — observed, derived, interpretive, forecast, recommendation —
+    are derived from them by a database-enforced mapping. Never set the two
+    independently.
 19. Data figures require provenance resolving to their analysis run.
 20. Record a contradicting source rather than omitting it.
 

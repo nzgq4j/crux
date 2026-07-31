@@ -40,7 +40,10 @@ Block 03.
 - Generated database types committed and regenerable by script.
 - `supabase/functions/` structure with a shared module and one health function.
 - An environment validation module.
-- `docs/local-development.md`.
+- The five storage buckets, with visibility recorded per bucket.
+- The `audit.events` table.
+- `docs/local-development.md`, recording project region, dev/staging/prod separation,
+  connection pooling mode and sizing, and the backup and retention policy.
 
 ## Functional Requirements
 
@@ -48,6 +51,10 @@ Block 03.
    migration creation, migration application, and type generation.
 2. **Local development.** `supabase start` followed by reset and seed must yield a
    working database with deterministic fixture data on a clean machine.
+2a. **Project setup (§45.1.1).** Record the project region and the dev/staging/prod
+   environment separation. Configure connection pooling — PgBouncer or Supabase
+   pooling — and record the pool mode and sizing. Define the database backup and
+   retention policy here; Block 23 implements and rehearses it.
 3. **Migrations.** Timestamp-ordered, forward-only in production, each with a
    documented reverse procedure. Schema changes occur only through migrations.
 4. **Seeds.** Deterministic and idempotent. Seeds must never contain production data
@@ -58,22 +65,47 @@ Block 03.
    - *Privileged server client* — secret key, RLS-bypassing, importable only from
      server-only modules and guarded so that importing it from a client component
      is a build-time or runtime failure.
-6. **PostgreSQL extensions.** Enable and pin at minimum: `pgcrypto`, `uuid-ossp` or
-   `gen_random_uuid` equivalent, `pg_trgm`, `unaccent`, `vector`, and
-   `pg_stat_statements`. Record the version of each.
+6. **PostgreSQL extensions.** The §45.1.1 baseline is mandatory: `vector`
+   (pgvector), `pgcrypto`, and `uuid-ossp` or a `gen_random_uuid` equivalent.
+   `uuid-ossp` is mandatory as §45.1.1 states; do not substitute `pgcrypto`'s
+   `gen_random_uuid` for it, though that function may still be used for defaults.
+   Additionally enable `pg_trgm`, `unaccent`, and `pg_stat_statements`, which later
+   blocks depend on. Record the version of each.
 7. **Required schemas.** Create exactly these namespaces:
 
    `public`, `cms`, `taxonomy`, `identity`, `workflow`, `assets`, `knowledge`,
    `search`, `accounts`, `subscriptions`, `analytics`, `audit`, `private`
 
+   §45.1.2 lists fourteen schemas; the fourteenth is `auth`, which is Supabase-managed
+   and already exists. Do not create or alter it. The thirteen above are created here.
+
    Grant usage deliberately per schema. The `private` schema is never exposed to
    PostgREST.
-8. **Storage initialisation.** Create the bucket set with public and private
-   designations recorded. Bucket policies are defined by Block 13; this block
-   creates the buckets and records their intended visibility.
+8. **Storage initialisation (§45.1.10).** Create the bucket set with visibility
+   recorded per bucket:
+
+   | Bucket | Visibility | Contents |
+   |---|---|---|
+   | `public-images` | Public | Published images and open assets |
+   | `private-reports` | Private | Gated reports and white papers |
+   | `datasets` | Private by default | Dataset files, classification per dataset |
+   | `avatars` | Public | Profile and expert portraits |
+   | `quarantine` | Private | Uploads pending validation |
+
+   Bucket policies are defined by Block 13; this block creates the buckets and
+   records their intended visibility.
 9. **Edge Function structure.** A shared module for request identifiers, structured
    logging, error shaping, and environment access; plus one health function proving
-   the pattern.
+   the pattern. The target function inventory from §45.3.2, implemented by their
+   owning blocks, is: embedding generation (15), email sending (14), webhook
+   processing (14), signed download generation (13), and scheduled publishing (08).
+
+   **Every Edge Function, without exception, enforces the §45.3.2 quartet**:
+   authentication of the caller (user JWT, service identity, cron secret, or verified
+   provider signature — whichever applies), authorization against the required
+   permission, input validation against a schema, and an audit-log write. The shared
+   module provides these as the default path so that a function opting out is a
+   visible, reviewable decision rather than an omission.
 10. **Environment validation.** A single module that parses and validates all
     required variables at startup, distinguishing public from server-only
     variables, and failing fast with a precise message naming the missing variable.
@@ -90,6 +122,11 @@ Block 03.
 - Establish the timestamp, identifier, and soft-state conventions later blocks
   inherit: UUID primary keys, `created_at`/`updated_at` with timezone, and an
   `updated_at` trigger helper in the `private` schema.
+- **Create `audit.events` (§45.1.9).** This block owns the table's creation, because
+  every later block writes to it. Required columns: event identifier, `occurred_at`,
+  actor (nullable for system actions), action, resource type, resource identifier,
+  decision, request identifier, and a JSON detail payload. Append-only by design;
+  Block 07 authors the policies that enforce it and Block 19 defines what is logged.
 - Establish the audit-event insert helper contract that Block 07 will protect.
 
 ## Security Requirements
@@ -123,7 +160,14 @@ obligations begin at Block 09.
 ## Acceptance Criteria
 
 - [ ] `supabase start`, reset, and seed succeed from a clean state.
-- [ ] All thirteen schemas exist.
+- [ ] All thirteen schemas exist; `auth` is present and Supabase-managed.
+- [ ] Project region and dev/staging/prod separation are recorded.
+- [ ] Connection pooling is configured, with mode and sizing recorded.
+- [ ] The backup and retention policy is defined.
+- [ ] `audit.events` exists with its required columns.
+- [ ] All five storage buckets exist with recorded visibility.
+- [ ] The Edge Function shared module enforces authentication, authorization, input
+      validation, and audit logging by default.
 - [ ] All required extensions are installed and version-recorded.
 - [ ] All three client factories exist, are typed, and are correctly scoped.
 - [ ] The privileged client is unreachable from client code, proven by test.

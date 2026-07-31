@@ -34,7 +34,8 @@
     slugs, fragment identifiers within a version, and provider subject identifiers.
 15. **Published versions are immutable.** Enforce with triggers. Convention is not
     enforcement.
-16. **Audit tables are append-only.** No role may update or delete an audit row.
+16. **`audit.events` is append-only.** No role may update or delete an audit row, and
+    read access is limited to designated administrative roles.
 17. Prefer database-enforced invariants over application-enforced ones wherever the
     database can express the rule.
 
@@ -44,6 +45,14 @@
     security context.
 19. Keep triggers simple and fast. Long-running work is enqueued, not performed in a
     trigger.
+19a. **Deterministic logic only** (§45.1.12). A function returns the same result for
+    the same inputs and database state.
+19b. **No external API calls inside the database.** No `pg_net`, no `http` extension,
+    no foreign data wrapper to a third-party endpoint. Outbound calls belong in the
+    trusted server layer or an Edge Function.
+19c. **No hidden business-logic complexity.** A trigger performs one clearly named
+    responsibility. Consequential business behaviour is not buried in a trigger where
+    a reader of the application code cannot see it.
 20. **No uncontrolled dynamic SQL.** Where dynamic SQL is unavoidable, use format with
     proper identifier quoting and never interpolate user input.
 

@@ -37,9 +37,10 @@ Blocks 05, 07.
 
 ## Functional Requirements
 
-1. **PostgreSQL full-text search.** A search document per published content version,
-   maintained on publication and correction, built from title, summary, headings,
-   body text, key findings, claim text, taxonomy terms, and author names.
+1. **PostgreSQL full-text search.** `search.documents` (§45.1.8) — a search document
+   per published content version, maintained on publication and correction, built
+   from title, summary, headings, body text, key findings, claim text, taxonomy
+   terms, and author names.
 2. **Weighted tsvector.** Apply weights so that title and summary outrank headings,
    which outrank body text. Use a configured text search configuration with
    `unaccent`. Index with GIN. Record the weight assignment and its rationale.
@@ -53,17 +54,25 @@ Blocks 05, 07.
    possible independently of surrounding prose.
 6. **Finding embeddings.** Embed key findings separately so that a summary-level
    query can match a finding without matching the full body.
-7. **Hybrid ranking.** Combine lexical and semantic scores through a documented
-   fusion method with tunable weights. Recency, content type, and authority signals
-   may adjust the score; every adjustment is documented and configurable, not hidden
-   in code.
+7. **Hybrid ranking.** The §45.1.8 ranking function combines exactly these five
+   signals, each independently weighted and configurable rather than hidden in code:
+
+   1. Lexical score (weighted tsvector rank)
+   2. Vector similarity
+   3. Taxonomy match, resolved through `taxonomy.synonyms`
+   4. Recency
+   5. Editorial boost, from the boost table in requirement 11
+
+   Document the fusion method and the default weight of each signal. Any additional
+   signal requires an ADR.
 8. **Permission-aware retrieval.** Permission filtering happens inside the retrieval
    query, not as a post-filter on results. Result counts, facet counts, pagination
    totals, and snippets must all reflect only what the requesting user may read.
 9. **Zero-result analysis.** Log queries returning no results, with normalised query
    text and frequency, surfaced in the Block 09 search-quality manager.
-10. **Synonyms.** A synonym table applied at query time, manageable through the
-    administrative surface, with a documented precedence over stemming.
+10. **Synonyms.** Apply `taxonomy.synonyms`, created by Block 05, at query time,
+    manageable through the Block 09 search-quality manager, with a documented
+    precedence over stemming. Block 15 creates no separate synonym store.
 11. **Boosts.** A boost table allowing an administrator to raise specified content or
     terms, with a recorded reason and an optional expiry.
 12. **Suppressions.** A suppression table removing specified content from results,
@@ -76,7 +85,13 @@ Blocks 05, 07.
 ## Technical Requirements
 
 - Indexing and embedding are performed asynchronously from a queue populated by the
-  publication transaction; a provider outage must never fail publication.
+  publication transaction (§45.3.3); a provider outage must never fail publication.
+- **Search vector update triggers (§45.1.12).** The §45.1.12 requirement is satisfied
+  by two mechanisms, and both must exist: a trigger that maintains the in-row
+  `tsvector` — or a generated column serving the same purpose — so lexical search is
+  never stale, and a trigger that enqueues the embedding job rather than computing it
+  inline. Only the embedding half is asynchronous. Lexical indexing is synchronous
+  with the write, because it depends on no external provider.
 - The embedding provider sits behind the Block 03 abstraction.
 - Retrieval functions are `SECURITY INVOKER` where possible so RLS applies naturally;
   where `SECURITY DEFINER` is required, the permission predicate is explicit and

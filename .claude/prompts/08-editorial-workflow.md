@@ -40,17 +40,33 @@ Blocks 05, 06, 07.
 
 ## Functional Requirements
 
-1. **Workflow states.** At minimum: `draft`, `in_review`, `changes_requested`,
-   `approved`, `scheduled`, `published`, `correction_pending`, `superseded`,
-   `withdrawn`. States are stored in a registry table, not as free text.
-2. **Workflow transitions.** A transition table declaring, for each state pair, the
-   permission required, the gates that must be satisfied, and whether the transition
-   is reversible. Transitions occur only through a transition function that
-   validates the declaration; direct status updates are prohibited by trigger.
-3. **Assignments.** Assign a version to a contributor, author, reviewer, or editor,
-   with a role on the assignment, an assigning actor, and a timestamp. Editorial
-   access under Block 07 is scoped by these assignments.
-4. **Reviews.** A review record per reviewer per round, with structured criteria
+### Required tables (§45.1.6)
+
+Create, **at minimum**, with these exact names. The first five are the mandatory
+§45.1.6 core; the remainder are required by this block's own requirements 5 through 8
+and follow the same naming convention:
+
+`workflow.states`, `workflow.transitions`, `workflow.content_state`,
+`workflow.assignments`, `workflow.reviews`, `workflow.approvals`,
+`workflow.comments`, `workflow.tasks`.
+
+1. **Workflow states.** `workflow.states`. At minimum: `draft`, `in_review`,
+   `changes_requested`, `approved`, `scheduled`, `published`, `correction_pending`,
+   `superseded`, `withdrawn`. States are stored in a registry table, not as free
+   text. Where the editorial model requires additional review stages — research
+   review and compliance review are the common cases — add them as states in this
+   registry rather than as ad hoc flags on the version.
+2. **Workflow transitions.** `workflow.transitions` declares, for each state pair,
+   the permission required, the gates that must be satisfied, and whether the
+   transition is reversible. `workflow.content_state` holds the current state of each
+   content version. Transitions occur only through a transition function that
+   validates the declaration; direct status updates are prohibited by trigger, and an
+   invalid transition is blocked at the database level.
+3. **Assignments.** `workflow.assignments` assigns a version to a contributor,
+   author, reviewer, or editor, with a role on the assignment, an assigning actor,
+   and a timestamp. Editorial access under Block 07 is scoped by these assignments.
+4. **Reviews.** `workflow.reviews` — a review record per reviewer per round, with
+   structured criteria
    covering evidence sufficiency, citation quality, methodology statement,
    limitations statement, and accessibility of figures and tables.
 5. **Approvals.** An approval is distinct from a review and records the approving
@@ -62,10 +78,14 @@ Blocks 05, 06, 07.
 8. **Deadlines.** Due dates on assignments and tasks, with overdue derivation
    available to the administrative queues.
 9. **Required review gates.** Publication requires: at least one completed review
-   with an approval, a methodology statement present where the content type requires
-   one, a limitations statement present where required, every quantitative claim
-   linked to a source, and every figure carrying a text alternative. A gate failure
-   blocks the transition and reports which gate failed.
+   with an approval; a methodology statement where the content type requires one; a
+   limitations statement where required; claim-to-source linkage satisfying the
+   **minimum evidence standard declared on the content type** in `cms.content_types`
+   (§45.1.7); every quantitative claim traceable to an analysis run, which is
+   mandatory for all content types and not configurable downward; no claim published
+   at high confidence without a resolvable source or analysis run; and every figure
+   carrying a text alternative. A gate failure blocks the transition and reports
+   which gate failed.
 10. **Separation of duties.** Enforce the Block 06 rules at the transition boundary:
     an author may not review or approve their own version, and a reviewer may not
     approve their own review. Enforcement is in the database.

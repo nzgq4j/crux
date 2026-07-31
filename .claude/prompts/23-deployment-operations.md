@@ -50,10 +50,19 @@ Blocks 04, 07, 19, 22.
    integration, accessibility, and security tests, secret scan, dependency scan, and
    production build. On merge to the default branch: deploy to staging, run
    post-deploy validation, and gate production on explicit approval.
-6. **Migration process.** Migrations apply automatically to development and staging,
-   and to production only through an approved release. Every migration is rehearsed
-   on staging against production-equivalent data. Destructive migrations require an
-   explicit approval step and a rehearsed reverse procedure.
+6. **Migration process (§45.5.3).** Migrations apply automatically to development and
+   staging, and to production only through an approved release. The staging promotion
+   sequence is fixed and each step gates the next: **run in staging → validate schema
+   integrity → run the RLS test suite → promote to production.**
+   - *Schema integrity validation* asserts that expected schemas, tables, columns,
+     constraints, functions, and triggers exist after migration, and that every table
+     in an exposed schema has RLS enabled. A failure blocks promotion.
+   - *The RLS test suite* is the Block 22 suite including the enumeration meta-test,
+     run against staging after migrations are applied. A failure blocks promotion.
+
+   Every migration is rehearsed on staging against production-equivalent data.
+   Destructive migrations require an explicit approval step and a rehearsed reverse
+   procedure.
 7. **Edge Function deployment.** Functions deploy per environment with
    environment-scoped secrets, versioned, and rolled back independently of the
    application.
@@ -74,13 +83,30 @@ Blocks 04, 07, 19, 22.
     and a documented database rollback strategy including the forward-fix-preferred
     policy and the conditions under which a restore is used instead.
 13. **Monitoring.** Uptime, error rate, latency, database health, queue depth, job
-    execution, and backup success.
+    execution, backup success, and **logs** — with a named aggregation destination, a
+    retention window, and at least one alertable log condition (§45.5.5).
 14. **Alerting.** Alert thresholds per signal, routing, escalation, and an
     explicitly defined on-call expectation. Alerts must be actionable; a noisy alert
     is a defect.
 15. **Incident response.** Severity definitions, roles, communication procedure,
     containment steps for the security incidents in the Block 07 threat model, and a
     post-incident review requirement.
+15a. **Environment configuration set (§45.5.1).** Each environment configures, and
+    startup validation asserts, at minimum: the Supabase URL; the anon/publishable
+    key; the service-role/secret key, **server-side only**; the embedding API key; and
+    the email provider key. A build fails if a server-only key is reachable from the
+    client bundle, and a deployment fails if any required variable is absent.
+15b. **Post-deployment validation (§45.5.5).** After a production deployment, and as a
+    gate on declaring the release good, validate on the deployed environment:
+    - The end-to-end journeys re-run against production — draft → publish, search,
+      citation export, and the gated download flow. These are the Block 22 journeys,
+      re-executed here, not merely read-path smoke checks.
+    - **RLS enforcement** — a denied-access probe returns denial.
+    - **Audit logging** — a privileged action produces an append-only `audit.events`
+      row with actor, action, resource, and decision.
+    - **Embedding pipeline** — a newly published item is indexed and embedded within
+      its expected window.
+    - Logs, errors, and performance metrics are flowing to their destinations.
 16. **OAuth environment validation.** Startup validation asserts that
     `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`,
     `GOOGLE_OAUTH_REDIRECT_URL`, and `SUPABASE_AUTH_EXTERNAL_GOOGLE_ENABLED` are
@@ -128,7 +154,10 @@ environment, so a build that regresses accessibility is detected before promotio
 - A test proving a missing or incoherent OAuth variable fails startup.
 - A test proving a job endpoint rejects a request without the cron secret.
 - Post-deploy smoke tests covering health, readiness, sign-in, a public report,
-  search, and a citation export.
+  search, a citation export, **a publishing verification** (a workflow transition
+  carried through to publication on the deployed environment), and **a storage-access
+  verification** (signed URL issuance against a private object, plus confirmation that
+  the object is unreachable without it) — the four §45.5.4 verifications.
 
 ## Documentation Requirements
 
@@ -145,6 +174,11 @@ environment, so a build that regresses accessibility is detected before promotio
 - [ ] CI runs every gate on every pull request.
 - [ ] Staging deploys automatically; production requires explicit approval.
 - [ ] Migrations are rehearsed on staging before production.
+- [ ] The §45.5.3 promotion sequence is enforced: staging → schema integrity → RLS
+      suite → production, each step gating the next.
+- [ ] The §45.5.1 configuration set is validated at startup in every environment.
+- [ ] Post-deployment validation covers RLS, audit logging, the embedding pipeline,
+      and the four end-to-end journeys on the deployed environment.
 - [ ] Edge Functions and the application deploy and roll back independently.
 - [ ] Every scheduled job has a schedule, monitoring, and cron-secret protection.
 - [ ] Backups run, are monitored, and a silent failure is detectable.

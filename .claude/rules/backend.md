@@ -2,7 +2,8 @@
 
 ## Input validation
 
-1. Validate every input at the trust boundary with a schema, before use.
+1. Validate every input at the trust boundary with a schema, before use. **Zod** is
+   the named validation library (§45.3.1); do not introduce a second one.
 2. Validate type, range, length, format, and permitted values. Reject rather than
    coerce ambiguous input.
 3. Validate on the server always. Client validation is a convenience, never the

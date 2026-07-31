@@ -7,12 +7,16 @@
 - Initialization branch: claude/initialize-crux-repository-w49p3o
 - Initialization date: 2026-07-31
 - Architecture source: The approved modular architecture supplied directly in the
-  Claude Code initialization instruction (acceptable source type 1). See
-  `docs/architecture-installation-report.md` for the source resolution record and the
-  one recorded source gap.
+  Claude Code initialization instruction (acceptable source type 1), plus the verbatim
+  Section 45 Implementation Checklist supplied subsequently. See
+  `docs/architecture-installation-report.md` for the source resolution record.
+- Architecture version: 1.1.0
 - Architecture installation status: Installed — 29 prompt blocks, 12 agent contracts,
-  9 rule files. One block (26) is derived from supplied coverage areas rather than a
-  verbatim source section; see the manifest's Known Source Gaps.
+  9 rule files. **No outstanding source gaps.** The Section 45 gap recorded at
+  installation was closed on 2026-07-31. Block 26 was rebuilt from the verbatim text,
+  and the reconciliation was applied across Blocks 04, 05, 06, 07, 08, 09, 11, 13, 15,
+  16, 17, 19, 23 and the `backend`, `database` and `content-modeling` rule files. See
+  the manifest's Section 45 Reconciliation record.
 
 ## Status Vocabulary
 

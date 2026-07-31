@@ -103,8 +103,9 @@ session reference, and payload:
 - Personal data in analytics is minimised: store what a stated purpose requires and
   nothing more, and document the purpose per field.
 - Health and readiness endpoints disclose no internal topology and are rate-limited.
-- Audit logging in the `audit` schema is distinct from analytics and remains
-  append-only and administratively restricted; analytics is never a substitute for it.
+- Audit logging in `audit.events` is distinct from analytics and remains append-only
+  and administratively restricted; analytics is never a substitute for it. Every
+  privileged action logs actor, action, resource, and decision (§45.3.6).
 - Access to raw analytics is limited to `analytics_viewer` and administrative roles.
 
 ## Accessibility Requirements
@@ -137,6 +138,8 @@ interface is keyboard-operable, focus-managed, and dismissible.
 - [ ] Structured logging is used throughout server code.
 - [ ] Request identifiers are generated, propagated, and returned.
 - [ ] Errors reach the monitor with redacted context and a request identifier.
+- [ ] Every privileged action writes an `audit.events` row carrying actor, action,
+      resource, and decision (§45.3.6), proven by test.
 - [ ] Jobs and queues are monitored, including dead-letter counts.
 - [ ] Liveness and readiness endpoints behave correctly and leak no internals.
 - [ ] Redaction is centralised and proven by test across all sensitive field classes.

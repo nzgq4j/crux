@@ -13,7 +13,8 @@ identifiers, complete authority metadata, and export in every required format.
 - Publisher, author, and contributor authority metadata.
 - Methodology, limitations, sources, licences, disclosures, revision history, and
   correction notices as citation metadata.
-- Export in eight formats.
+- Export in eight formats — the five mandated by §45.3.4 plus three retained
+  additions, which are deferrable only with a recorded traceability row.
 
 ### Out of scope
 
@@ -76,9 +77,18 @@ Blocks 05, 16.
 ### Citation formats
 
 Render every citation in all of: plain text, APA, Chicago, Harvard, MLA, BibTeX,
-RIS, and CSL-JSON. Each renderer must handle: multiple authors, organisational
-authors, no named author, a corrected version, a superseded version, a withdrawn
-version, and a version with no DOI.
+RIS, and CSL-JSON.
+
+§45.3.4 requires five of these — APA, MLA, Chicago, BibTeX, and RIS — as the
+mandatory minimum. The eight above are retained as the full set, since the superset
+satisfies §45 without loss. Plain text, Harvard, and CSL-JSON may be deferred to a
+later release only if the deferral is recorded as a Deferred row in
+`docs/requirements-traceability.md`, which Block 24 reconciles into
+`docs/known-limitations.md`. The five §45 formats may not be deferred.
+
+Each renderer must handle: multiple authors, organisational authors, no named author,
+a corrected version, a superseded version, a withdrawn version, and a version with no
+DOI.
 
 ### Discovery limitation statement
 
@@ -123,7 +133,9 @@ this architecture may claim otherwise.
 
 ## Testing Requirements
 
-- A test per format asserting exact expected output for a fixture version.
+- A test per implemented format asserting exact expected output for a fixture
+  version. The five §45 formats must always be covered; a deferred format has no test
+  and a recorded Deferred traceability row instead.
 - Tests covering multiple authors, organisational authors, missing authors, and
   special characters.
 - A test proving a version-level URL resolves to the cited version after supersession.
@@ -143,7 +155,10 @@ this architecture may claim otherwise.
 - [ ] Item and version identifiers are permanent and never reused.
 - [ ] Version-level URLs resolve to the exact version after supersession.
 - [ ] All fifteen metadata elements are present in the citation record.
-- [ ] All eight formats render correctly and validate where a schema exists.
+- [ ] The five §45 formats — APA, MLA, Chicago, BibTeX, RIS — render correctly and
+      validate where a schema exists. These are non-deferrable.
+- [ ] Plain text, Harvard, and CSL-JSON render correctly and validate, **or** their
+      deferral is recorded as a Deferred row in `docs/requirements-traceability.md`.
 - [ ] Every renderer draws from a single metadata assembly function.
 - [ ] Corrections and withdrawals appear in the citation record.
 - [ ] Absent fields are omitted, never fabricated, proven by test.

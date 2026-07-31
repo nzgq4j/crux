@@ -65,7 +65,24 @@ Create, with these exact names:
 ### Claim classification
 
 Every claim carries exactly one type from this controlled set, and the distinctions
-are enforced rather than advisory:
+are enforced rather than advisory.
+
+**Reconciliation with §45.1.7.** Section 45 specifies five evidence classes:
+observed, derived, interpretive, forecast, and recommendation. The nine types below
+are the storage-level taxonomy; the five §45 classes are the coarse public
+classification, derived from them by this fixed mapping. Store the nine; expose
+either, and never let the two disagree.
+
+| §45 evidence class | Storage claim types |
+|---|---|
+| Observed | Observed fact, Definition |
+| Derived | Derived finding, Quantitative finding |
+| Interpretive | Interpretation, Assumption, Opinion |
+| Forecast | Forecast |
+| Recommendation | Recommendation |
+
+The mapping is implemented as a generated column or a deterministic function, not as
+application-side logic, so the two classifications cannot drift.
 
 - **Observed fact** — directly measured or recorded; requires a source.
 - **Derived finding** — produced by analysis; requires an analysis run.
@@ -87,11 +104,23 @@ are enforced rather than advisory:
    published unless it resolves to an analysis run, which resolves to dataset
    versions and variables. This is enforced as a Block 08 publication gate backed by
    a database validation function.
-2. **Figures must be traceable.** A figure presenting data cannot be published
-   without a `figure_provenance` row resolving to its analysis run and dataset
-   versions.
+2. **Figures must be traceable (§45.3.5).** *Every* published figure has a traceable
+   origin. A figure presenting data cannot be published without a
+   `knowledge.figure_provenance` row resolving to its analysis run and dataset
+   versions. A figure that presents no data — a photograph, diagram, or illustration —
+   satisfies the requirement through its Block 13 asset origin record: uploading
+   actor, licence, and attribution. A figure with neither is not publishable.
 3. **Source requirement.** Observed facts require at least one supporting source.
    Interpretations, recommendations, and forecasts must reference their basis.
+   Per §45.1.7, whether source linkage is optional or mandatory is **configurable per
+   content type** in `cms.content_types`: a content type declares its minimum
+   evidence standard, and the Block 08 publication gate enforces that type's setting
+   rather than one global rule. Quantitative findings are the exception — their
+   traceability requirement is absolute and not configurable downward.
+3a. **No orphaned high-confidence claims.** A claim published at high confidence
+   without a resolvable source or analysis run is a publication-blocking condition
+   (§45.1.7 validation). The Block 09 evidence review surfaces these before they
+   reach the gate.
 4. **Contradiction visibility.** Where a source contradicts a claim, the relationship
    is recorded rather than omitted, and is surfaced in the Block 09 evidence review.
 
@@ -135,7 +164,13 @@ claim-to-source relationships in a keyboard-navigable, screen-reader-legible for
 - A test proving a quantitative finding without an analysis run fails the
   publication gate.
 - A test proving a data figure without provenance fails the publication gate.
-- A test proving an observed fact without a source fails validation.
+- A paired test on the configurable standard: an observed fact without a source fails
+  validation for a content type whose declared minimum evidence standard requires
+  linkage, and is permitted for a content type that does not.
+- A test proving the five §45 evidence classes derive correctly from the nine storage
+  claim types, and a drift test proving the two cannot disagree.
+- A test proving a high-confidence claim with no resolvable source or analysis run
+  blocks publication.
 - A test proving a dataset version referenced by a published version is immutable.
 - A test proving restricted dataset contents are unreadable by unauthorised users.
 - A test proving provenance survives content withdrawal.
@@ -143,7 +178,9 @@ claim-to-source relationships in a keyboard-navigable, screen-reader-legible for
 ## Documentation Requirements
 
 - `docs/provenance.md`: the nine tables, the claim taxonomy with worked examples of
-  each type, the traceability rules, and the evidence review procedure.
+  each type, the nine-to-five §45 evidence class mapping and where it is implemented,
+  the per-content-type minimum evidence standard, the traceability rules, and the
+  evidence review procedure.
 - Document how reproducibility limitations are recorded when a run cannot be
   reproduced exactly.
 
@@ -153,7 +190,12 @@ claim-to-source relationships in a keyboard-navigable, screen-reader-legible for
 - [ ] All nine claim types exist and their distinguishing constraints are enforced.
 - [ ] Quantitative findings are traceable to analysis runs, datasets, and variables.
 - [ ] Data figures are traceable through `figure_provenance`.
-- [ ] Observed facts require sources; interpretations reference their basis.
+- [ ] Source-linkage enforcement follows the content type's declared minimum evidence
+      standard, proven by a paired allow/deny test; interpretations reference their basis.
+- [ ] The five §45 evidence classes derive from the nine claim types by a generated
+      column or deterministic function, proven by a drift test.
+- [ ] A high-confidence claim without a resolvable source or analysis run blocks
+      publication, proven by test.
 - [ ] Contradicting sources are recordable and surfaced.
 - [ ] Dataset versions referenced by published content are immutable.
 - [ ] Restricted dataset contents are unreadable by unauthorised users.

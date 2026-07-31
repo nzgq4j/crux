@@ -44,7 +44,10 @@ Create, at minimum, with these exact names:
 
 - `cms.content_types` — the registry of content types (article, report, white paper,
   dataset record, collection, hub page, static page), each with its permitted module
-  types and validation rules.
+  types, its validation rules, and its **declared minimum evidence standard**
+  governing whether claim-to-source linkage is optional or mandatory for that type
+  (§45.1.7). The standard is declared here and enforced by the Block 08 publication
+  gate; Block 16 defines its semantics.
 - `cms.content_items` — the stable content entity. Holds the stable public
   identifier, canonical slug, type, current published version pointer, and lifecycle
   state. The item identifier never changes for the life of the content.
@@ -90,22 +93,57 @@ Create, at minimum, with these exact names:
 
 ### Taxonomy and identity
 
-11. **Controlled taxonomy.** `taxonomy` holds vocabularies, terms, hierarchical
-    relationships, and content-to-term assignments. Free-text tagging is not
-    permitted where a controlled vocabulary exists.
-12. **Identity records.** `identity` holds people and organisations referenced as
-    authors, reviewers, publishers, and sources.
-13. **Expert records.** Expert profiles extend identity records with affiliation,
-    biography, expertise terms, and disclosure statements.
-14. **External identifiers.** Identity and content records support external
-    identifier rows — ORCID, ROR, DOI, ISSN — with an identifier scheme and value.
+11. **Controlled taxonomy (§45.1.4).** Create, with these exact names:
+
+    - `taxonomy.vocabularies` — the registry of controlled vocabularies.
+    - `taxonomy.terms` — terms within a vocabulary.
+    - `taxonomy.term_relationships` — hierarchy, expressed as broader and narrower
+      relationships.
+    - `taxonomy.content_terms` — content-to-term assignments.
+    - `taxonomy.synonyms` — the synonym resolution layer, consumed by Block 15.
+    - `taxonomy.external_mappings` — mappings to external vocabularies and schemes.
+
+    Implement controlled-vocabulary enforcement, term hierarchy, synonym resolution,
+    term merge with redirect creation, and orphan-term detection. Free-text tagging
+    is not permitted where a controlled vocabulary exists, and no production table
+    may accept a free-text taxonomy assignment.
+12. **Identity records.** Create, with these exact names:
+
+    - `identity.people` — natural persons cited as authors, reviewers, or sources.
+    - `identity.organisations` — organisations cited as publishers, sponsors, or
+      sources.
+    - `identity.expert_profiles` — extends a person with affiliation, biography,
+      expertise terms, and disclosure statements.
+    - `identity.external_identifiers` — ORCID, ROR, DOI, ISSN and similar, with an
+      identifier scheme and value, attachable to a person, organisation, or content
+      item.
+
+    **Schema note.** These are the *bibliographic* identity family. The
+    *authorization* family in the same schema — `identity.roles`,
+    `identity.permissions`, `identity.user_roles`, `identity.role_permissions` — is
+    created by Block 06 and is unrelated. A platform user and a cited author are
+    different entities, linked only through `accounts.profiles`.
+13. **Expert records.** Expert profiles are readable publicly only where the person
+    has an active, published profile; the underlying person record may exist without
+    one.
+14. **External identifiers.** External identifier values are unique per scheme, and
+    an unrecognised scheme is rejected rather than stored as free text.
 
 ## Technical Requirements
 
-- Foreign keys on every relationship, with deliberate delete behaviour.
+- Foreign keys on every relationship, with deliberate delete behaviour. §45.1.3 names
+  two edges explicitly, which must exist: `cms.content_versions` →
+  `cms.content_items`, and `cms.content_version_modules` → `cms.content_versions` and
+  → `cms.content_modules`.
+- **Slug generation function (§45.1.12).** A deterministic function in the `private`
+  schema that normalises a title to a slug — case folding, transliteration,
+  punctuation and whitespace handling — and resolves collisions by a defined suffix
+  rule. Slugs are generated through this function, never ad hoc in application code,
+  so that two callers cannot produce different slugs for the same title.
 - Check constraints enforcing valid lifecycle states and version ordering.
 - Unique constraints on stable identifiers, canonical slugs, and fragment ids
-  within a version.
+  within a version. Slug uniqueness is enforced per locale where localization is
+  enabled, and globally otherwise (§45.1.3).
 - Generated columns or triggers for derived text; never application-side drift.
 - Indexes for every foreign key and every documented access path.
 

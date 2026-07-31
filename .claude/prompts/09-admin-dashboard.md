@@ -49,8 +49,11 @@ mutations:
    requested, approved, scheduled, and overdue.
 5. **Editorial calendar** — scheduled and recently published content by date, with
    the ability to reschedule or cancel where authorised.
-6. **Evidence review** — claims requiring source attachment, quantitative claims
-   without a traceable dataset, and sources failing validation.
+6. **Evidence review** — claims requiring source attachment under their content
+   type's minimum evidence standard, quantitative claims without a traceable dataset,
+   claims published at high confidence with no resolvable source or analysis run
+   (§45.1.7), claims with a recorded contradicting source, and sources failing
+   validation.
 7. **Citation-quality review** — versions with missing methodology, missing
    limitations, unresolved references, or malformed external identifiers.
 8. **Taxonomy manager** — vocabularies and terms, create, merge, deprecate, and

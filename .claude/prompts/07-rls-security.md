@@ -60,6 +60,12 @@ Blocks 05, 06.
 7. **Editorial access.** Author, reviewer, editor, managing editor, and publisher
    access is scoped by assignment where the workflow assigns work, not granted
    globally by role alone.
+7a. **Subscription-based access (§45.1.11).** Content items, versions, datasets, and
+   assets gated behind a subscription tier or research membership are readable only
+   where the requesting user holds an active entitlement. The entitlement is evaluated
+   **inside the policy** against the subscription and entitlement tables, not by the
+   application after the row is returned. An expired or cancelled subscription
+   revokes read access at the next request, with no cached grant.
 8. **Storage policies.** Public buckets permit anonymous read of published assets
    only. Private buckets permit no direct read; access is exclusively through signed
    URLs issued by the trusted server layer after an entitlement check.
@@ -70,8 +76,10 @@ Blocks 05, 06.
     Similarity queries must filter by permission inside the query.
 11. **Claims and source policies.** Claims, sources, and provenance rows attached to
     a published version are publicly readable; those attached to drafts are not.
-12. **Audit protections.** Audit tables are append-only. No role may update or
-    delete an audit row. Read access is limited to designated administrative roles.
+12. **Audit protections.** `audit.events` is append-only (§45.1.9). No role may
+    update or delete an audit row. Read access is limited to designated
+    administrative roles. Triggers write audit rows for content changes, workflow
+    transitions, role changes, and publication events.
 13. **OAuth external-identifier protections.** No role may insert, update, or delete
     an external identity row through the API. Only the trusted server layer writes
     them. A user may read their own linked identities and may not link an identity
@@ -134,7 +142,9 @@ screen-reader user cannot distinguish from "no results".
 - [ ] Draft content is unreachable by anonymous and registered users, proven by test.
 - [ ] Private storage is unreachable without a server-issued signed URL.
 - [ ] Search and embedding rows enforce source visibility, proven by test.
-- [ ] Audit tables are provably append-only.
+- [ ] `audit.events` is provably append-only.
+- [ ] Subscription-gated content is unreadable without an active entitlement,
+      evaluated in-policy, proven by test.
 - [ ] External identity rows are unwritable through the API.
 - [ ] Denied tests exist for every denied role and relation pair, and all pass.
 - [ ] The enumeration test that catches unprotected new tables exists and passes.

@@ -46,19 +46,37 @@ Blocks 04, 05.
 4. **Password recovery.** Time-limited, single-use recovery, invalidating existing
    sessions on password change.
 5. **Session management.** Sessions readable server-side from cookies, refreshed
-   safely, revocable, and cleared on sign-out across all surfaces.
-6. **Profiles.** A profile row created for every auth user through a trigger, with
-   display name, contact preferences, and a link to an identity record where the
-   user is a contributor.
-7. **Roles.** A role table seeded with exactly:
+   safely, revocable, and cleared on sign-out across all surfaces. Configure JWT
+   expiration explicitly and enforce secure session cookies (§45.2.1).
+5a. **Multifactor authentication (optional).** Provide an MFA extension point per
+   §45.2.1. MFA is optional for this release; the extension point is not. If MFA is
+   deferred, record the deferral as a Deferred row in
+   `docs/requirements-traceability.md` — which Block 24 reconciles into
+   `docs/known-limitations.md` — rather than removing the hook.
+6. **Profiles.** `accounts.profiles` — a row created for every auth user through a
+   trigger, with display name, contact preferences, and a link to an identity record
+   where the user is a contributor.
+7. **Roles.** `identity.roles`, seeded with exactly:
 
    `registered_user`, `subscriber`, `research_member`, `contributor`, `author`,
    `reviewer`, `editor`, `managing_editor`, `publisher`, `taxonomy_manager`,
    `asset_manager`, `analytics_viewer`, `user_administrator`,
    `platform_administrator`
 
-8. **Permissions.** A permission table and a role-permission mapping. Permissions
-   are granular verbs over resources, not role names re-used as permissions.
+8. **Permissions.** `identity.permissions`, with `identity.role_permissions` mapping
+   permissions to roles and `identity.user_roles` mapping roles to users (§45.1.5).
+   Permissions are granular verbs over resources, not role names re-used as
+   permissions. The permission set spans at minimum the four action families named in
+   §45.2.3 — **content actions, taxonomy actions, asset actions, and admin actions** —
+   and the server-side resolver maps permissions across all four.
+
+   **Schema note.** The `identity` schema carries two related but distinct concerns:
+   the authorization model (`roles`, `permissions`, `user_roles`,
+   `role_permissions`) and the bibliographic identity records defined in Block 05
+   (people and organisations cited as authors, reviewers, and sources). These are
+   separate table families in one namespace. A platform user and a cited author are
+   different entities; link them explicitly through `accounts.profiles` rather than
+   conflating them.
 9. **Database-backed authorization.** A `private` schema function returning whether
    the current user holds a named permission, usable inside RLS policies and callable
    from the trusted server layer. Application code never computes permissions from
@@ -70,15 +88,24 @@ Blocks 04, 05.
       audited exception role grants it.
     - Role assignment requires `user_administrator` or `platform_administrator`,
       and no user may elevate their own roles.
-11. **External identity support.** A table recording provider, provider subject
-    identifier, linked user, verified email, first-linked timestamp, and last-used
-    timestamp, unique on provider plus subject. Block 28 populates it.
+11. **External identity support.** `accounts.external_identities` — recording
+    provider, provider subject identifier, linked user, verified email at link time,
+    first-linked timestamp, and last-used timestamp, unique on provider plus subject.
+    It sits in `accounts` alongside `accounts.profiles`, reinforcing that a platform
+    account is distinct from a bibliographic identity record. Block 28 populates it.
 12. **Google OAuth integration reference.** This block provides the storage and role
     resolution that Block 28 depends on. See `.claude/prompts/28-google-oauth-authentication.md`
     for the flow itself; do not implement the OAuth flow here.
 
 ## Technical Requirements
 
+- **JWT validation (§45.2.4).** Every server action, route handler, and Edge Function
+  validates the Supabase JWT server-side before performing any work. Validation
+  happens per request against the current signing key; a cached or client-asserted
+  identity is never sufficient.
+- **Expired tokens are rejected (§45.2.4).** An expired or otherwise invalid token is
+  refused outright and never silently refreshed into an authorized session. Expiry is
+  evaluated server-side against server time, not against a client-supplied timestamp.
 - Session reading occurs in a single server helper reused by every protected route.
 - Middleware protects `/admin` and account routes; route handlers re-verify
   permission rather than trusting middleware alone.
@@ -126,7 +153,13 @@ error state. Errors must be announced to assistive technology.
 ## Acceptance Criteria
 
 - [ ] All fourteen roles exist with the exact specified names.
-- [ ] Permissions are granular and mapped to roles.
+- [ ] Permissions are granular and mapped to roles, covering all four §45.2.3 action
+      families.
+- [ ] JWT expiration is explicitly configured and secure session cookie attributes are
+      enforced (§45.2.1).
+- [ ] JWT is validated server-side on every server action; expired tokens are rejected.
+- [ ] The MFA extension point exists; if MFA itself is deferred, the deferral is
+      recorded as a Deferred row in `docs/requirements-traceability.md` (§45.2.1).
 - [ ] The permission function is database-backed and usable in RLS.
 - [ ] Email verification gates privileged capability.
 - [ ] Password recovery is single-use, time-limited, and session-invalidating.

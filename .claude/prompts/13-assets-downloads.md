@@ -39,10 +39,12 @@ Blocks 04, 06, 07.
 
 ## Functional Requirements
 
-1. **Storage buckets.** A public bucket for published images and open assets; a
-   private bucket for gated reports, white papers, and restricted datasets; a
-   quarantine bucket for uploads pending validation. Bucket visibility is explicit
-   and recorded.
+1. **Storage buckets (§45.1.10).** Apply policies to the buckets created in
+   Block 04: `public-images` (public read of published assets only), `avatars`
+   (public read), `private-reports` (no direct read; signed URL only), `datasets`
+   (private by default, per-dataset classification), and `quarantine` (no read
+   except by the validation pipeline). Bucket visibility is explicit and recorded,
+   and no private bucket has any public read path.
 2. **Asset metadata.** An asset table recording filename, storage path, bucket,
    declared MIME type, detected MIME type, byte size, checksum, dimensions where
    applicable, uploading actor, and upload timestamp.
@@ -63,8 +65,8 @@ Blocks 04, 06, 07.
 7. **Licensing.** Every asset records a licence, an attribution string where
    required, and a usage restriction flag. Assets with restrictive licences cannot be
    attached to publicly licensed content without an explicit override that is audited.
-8. **Private report storage.** Gated reports and white papers are stored only in the
-   private bucket and are never given a public URL.
+8. **Private report storage.** Gated reports and white papers are stored only in
+   `private-reports` and are never given a public URL.
 9. **Dataset storage.** Dataset files are stored with their dataset version,
    checksum, format, and variable dictionary reference from Block 16.
 10. **Signed URLs.** Downloads are delivered by a short-lived signed URL issued by
@@ -139,7 +141,8 @@ Blocks 04, 06, 07.
 
 ## Acceptance Criteria
 
-- [ ] Public, private, and quarantine buckets exist with recorded visibility.
+- [ ] All five buckets exist with recorded visibility and correct policies:
+      `public-images`, `avatars`, `private-reports`, `datasets`, `quarantine`.
 - [ ] Uploads are validated by file signature and promoted only on success.
 - [ ] Checksums are computed, stored, verified, and exposed for downloads.
 - [ ] Asset versioning preserves prior versions and published references.

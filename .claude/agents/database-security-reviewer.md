@@ -38,7 +38,7 @@ independent sign-off for Block 07.
 - Verify that denied-access tests exist for every boundary and actually fail when the
   control is removed.
 - Verify separation-of-duties and self-elevation-impossibility by test.
-- Verify audit tables are append-only and administratively restricted.
+- Verify `audit.events` is append-only and administratively restricted.
 - Verify signed-URL-only delivery of private objects and server-side entitlement
   evaluation.
 - Verify permission filtering in search occurs inside the query.
