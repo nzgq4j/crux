@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { searchContent } from '@/lib/content/queries'
 import { ContentGrid } from '@/components/content/ContentCard'
 import { PageHeader, EmptyState, DegradedState, Pagination } from '@/components/ui/states'
@@ -63,13 +64,13 @@ async function Results({ q, page }: { q: string; page: number }) {
         <p>
           Search covers titles, summaries and the full text of every published item.
           You can also browse by{' '}
-          <a href="/industries" className="text-[--color-accent]">
+          <Link href="/industries" className="text-[--color-accent]">
             industry
-          </a>{' '}
+          </Link>{' '}
           or{' '}
-          <a href="/capabilities" className="text-[--color-accent]">
+          <Link href="/capabilities" className="text-[--color-accent]">
             capability
-          </a>
+          </Link>
           .
         </p>
       </EmptyState>

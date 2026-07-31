@@ -203,15 +203,7 @@ export function getItemTerms(itemId: string): Promise<Term[]> {
   )
 }
 
-export function getVersionHistory(itemId: string): Promise<
-  Array<{
-    public_version_id: string
-    version_number: number
-    status: string
-    published_at: string | null
-    correction_reason: string | null
-  }>
-> {
+export function getVersionHistory(itemId: string): Promise<VersionHistoryEntry[]> {
   return asAnon((s) =>
     s.query(
       `SELECT public_version_id, version_number, status, published_at, correction_reason

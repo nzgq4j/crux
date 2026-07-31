@@ -1,4 +1,5 @@
 import type { ContentModule } from '@/lib/content/queries'
+import { serverEnv } from '@/lib/env'
 
 /**
  * Renders structured content modules as semantic HTML (Block 11, §45.4.1).
@@ -287,9 +288,11 @@ function Module({ module: m }: { module: ContentModule }) {
       return (
         <figure id={id} className="scroll-mt-24 my-10">
           {src ? (
-            // eslint-disable-next-line @next/next/no-img-element -- asset delivery
-            // is Block 13's signed-URL pipeline, which is not built; next/image
-            // would need a configured loader it does not yet have.
+            // Asset delivery is Block 13's signed-URL pipeline, which is not built.
+            // next/image would need an images loader that next.config.ts does not
+            // configure, and the CSP restricts img-src to 'self', data: and blob:.
+            // Revisit when Block 13 lands.
+            // eslint-disable-next-line @next/next/no-img-element
             <img src={src} alt={alt} className="w-full border border-[--color-rule]" />
           ) : (
             <div
@@ -390,7 +393,7 @@ function Module({ module: m }: { module: ContentModule }) {
  * mechanism that stops it reaching production in the first place.
  */
 function MalformedModule({ id, kind, reason }: { id: string; kind: string; reason: string }) {
-  if (process.env.NODE_ENV === 'production') return null
+  if (serverEnv().NODE_ENV === 'production') return null
   return (
     <div
       id={id}
