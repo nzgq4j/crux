@@ -282,6 +282,18 @@ function buildModules(doc, plan) {
  * Front matter is recognised by the labels the corpus actually uses and is routed to
  * version fields rather than to modules.
  */
+/**
+ * The heading that opens a document's terminal source block.
+ *
+ * Six spellings across the eleven .docx: `Principal Sources`, `REFERENCES`,
+ * `Bibliography`, `SELECTED SOURCES`, `Sources`, and
+ * `REFERENCES AND SOURCE NOTES` — hence the optional trailing words rather than an
+ * exact match. Anchored at both ends so a body heading merely containing the word
+ * "sources" is not mistaken for the bibliography.
+ */
+const SOURCE_BLOCK_HEADING =
+  /^(principal sources|selected sources|sources|references(\s+and\s+source\s+notes)?|bibliography|works cited)$/i
+
 const FRONT_MATTER_LABELS = new Set([
   'ASSESSMENT SCOPE',
   'SCOPE',
@@ -315,6 +327,16 @@ function classify(rawBlocks, plan) {
     if (!text) continue
     const level = headingLevel(paragraphStyle(b.xml))
 
+    // The terminal source block is checked BEFORE the heading branch, because in
+    // several documents it is a styled Heading1 rather than a plain paragraph. Testing
+    // headings first swallowed the whole bibliography into body prose, silently: three
+    // of the eleven .docx reported zero source lines until this was reordered.
+    if (SOURCE_BLOCK_HEADING.test(text)) {
+      out.push({ kind: 'sources-start', text })
+      inFrontMatter = false
+      continue
+    }
+
     if (level !== null) {
       inFrontMatter = false
       out.push({ kind: 'heading', level, text })
@@ -336,11 +358,6 @@ function classify(rawBlocks, plan) {
       continue
     }
 
-    // The terminal source block and everything after it is bibliography, not body.
-    if (/^(Principal Sources|References|Bibliography|Selected Sources|Sources)$/i.test(text)) {
-      out.push({ kind: 'sources-start', text })
-      continue
-    }
     out.push({ kind: 'prose', text })
   }
 

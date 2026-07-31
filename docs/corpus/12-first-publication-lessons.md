@@ -222,3 +222,49 @@ Nothing in this list is a control to weaken. Three of the four surprises —
 the reviewer/approver separation, the basis-claim requirement, the credibility-notes
 requirement — were constraints refusing work that was not yet good enough, which is
 what they are for.
+
+## 12.13 The ingester across the rest of the corpus
+
+Dry-run against all eleven `.docx` before ingesting any of them. It completes on every
+one, and the run surfaced a defect worth recording because of how quietly it failed.
+
+**Terminal source blocks were being swallowed.** In three documents — AM Feedstock
+*Sustaining the Digital Thread*, C-UxS Maritime and Integrated Effects — the
+bibliography heading is a styled `Heading1`, not a plain paragraph. The classifier
+tested for headings first, so `REFERENCES`, `Bibliography` and
+`REFERENCES AND SOURCE NOTES` were classified as body headings and their entries
+became prose modules. The documents reported **zero** source lines and produced 134,
+146 and 140 modules respectively.
+
+Nothing errored. The output looked plausible. Only comparing the source-line counts
+against F19 — 24, 27 and 21 — showed they were missing.
+
+Reordering the check and broadening the pattern to the six spellings the corpus uses
+recovers all three exactly, and drops those documents to 109, 118 and 118 modules.
+Sensor Fusion is unchanged at 87, so there is no regression.
+
+**The lesson generalises.** An importer's failures are mostly silent: it produced
+modules, it exited zero, and the only signal was a number that disagreed with an
+independent count made earlier. Every remaining document should be dry-run and its
+counts checked against document 01 before it is ingested.
+
+### Shape of the remaining ten
+
+| Document | Modules | Source lines | Tables needing a caption |
+|---|---:|---:|---:|
+| AM Feedstock — Tactical Environment | 71 | 23 | 2 |
+| AM Feedstock — Digital Thread | 109 | 24 | 2 |
+| C-UAS Acquisition | 90 | 27 | 4 |
+| C-UAS Generative Technologies | 97 | 25 | 2 |
+| IPB in the Era of UAS | 72 | 18 | 2 |
+| TADSS | 80 | 23 | 3 |
+| C-UxS Maritime | 118 | 27 | 3 |
+| Integrated Effects | 118 | 21 | 1 |
+| Traffic Records | 92 | 28 | 1 |
+| VUCA | 77 | 22 | 3 |
+
+Traffic Records confirms F10 in the worst way: **92 modules, 90 of them prose, and not
+a single heading.** Its hierarchy has to be reconstructed by a human, and it remains
+the right document to attempt fourth, as a deliberate stress test.
+
+Twenty-three table captions must be authored across the ten.
