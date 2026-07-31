@@ -12,6 +12,7 @@ import type {
   VersionHistoryEntry,
 } from './types'
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, bound } from './types'
+import { publicEnv } from '@/lib/env'
 
 /**
  * PostgREST backend (Block 03 boundary).
@@ -25,8 +26,8 @@ import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, bound } from './types'
  * because it grants nothing that RLS does not already permit an anonymous reader.
  */
 
-const BASE = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
-const KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? ''
+const BASE = publicEnv.NEXT_PUBLIC_SUPABASE_URL ?? ''
+const KEY = publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? ''
 
 export function restConfigured(): boolean {
   return BASE.length > 0 && KEY.length > 0
