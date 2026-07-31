@@ -63,23 +63,37 @@ GRANT USAGE ON SCHEMA private TO service_role;
 -- auth.uid() / auth.jwt() — Supabase-compatible current-user accessors.
 -- Locally driven by the `request.jwt.claims` GUC, exactly as Supabase does it.
 -- ---------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION auth.jwt()
-RETURNS jsonb
-LANGUAGE sql
-STABLE
-AS $$
-  SELECT COALESCE(
-    NULLIF(current_setting('request.jwt.claims', true), '')::jsonb,
-    '{}'::jsonb
-  );
-$$;
+-- CREATED ONLY IF ABSENT. On Supabase these are managed by the platform and must
+-- not be replaced — overwriting auth.uid() would break every policy in the project,
+-- including those belonging to Supabase Auth itself. Locally they do not exist, so
+-- this defines the same contract Supabase provides.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+     WHERE n.nspname = 'auth' AND p.proname = 'jwt'
+  ) THEN
+    EXECUTE $fn$
+      CREATE FUNCTION auth.jwt() RETURNS jsonb LANGUAGE sql STABLE AS $body$
+        SELECT COALESCE(
+          NULLIF(current_setting('request.jwt.claims', true), '')::jsonb,
+          '{}'::jsonb
+        );
+      $body$;
+    $fn$;
+  END IF;
 
-CREATE OR REPLACE FUNCTION auth.uid()
-RETURNS uuid
-LANGUAGE sql
-STABLE
-AS $$
-  SELECT NULLIF(auth.jwt() ->> 'sub', '')::uuid;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+     WHERE n.nspname = 'auth' AND p.proname = 'uid'
+  ) THEN
+    EXECUTE $fn$
+      CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $body$
+        SELECT NULLIF(auth.jwt() ->> 'sub', '')::uuid;
+      $body$;
+    $fn$;
+  END IF;
+END
 $$;
 
 COMMENT ON FUNCTION auth.uid() IS

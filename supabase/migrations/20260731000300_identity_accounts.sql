@@ -232,9 +232,25 @@ BEGIN
 END;
 $$;
 
-CREATE TRIGGER users_create_profile
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION private.handle_new_user();
+-- On Supabase, auth.users is platform-owned; creating a trigger on it may be
+-- refused depending on the connecting role. The profile row is also created by the
+-- application on first sign-in, so a refusal degrades rather than breaks — but it
+-- must be visible, not silent.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'users_create_profile' AND NOT tgisinternal
+  ) THEN
+    BEGIN
+      CREATE TRIGGER users_create_profile
+        AFTER INSERT ON auth.users
+        FOR EACH ROW EXECUTE FUNCTION private.handle_new_user();
+    EXCEPTION WHEN insufficient_privilege OR wrong_object_type THEN
+      RAISE WARNING 'could not create users_create_profile trigger on auth.users (%). Profile creation must be handled by the application layer.', SQLERRM;
+    END;
+  END IF;
+END
+$$;
 
 CREATE TRIGGER profiles_updated_at BEFORE UPDATE ON accounts.profiles
   FOR EACH ROW EXECUTE FUNCTION private.set_updated_at();
