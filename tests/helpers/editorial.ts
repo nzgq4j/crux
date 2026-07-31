@@ -137,8 +137,48 @@ export async function scenario<T>(fn: (s: Scenario) => Promise<T>): Promise<T> {
   }
 }
 
-/** Record an approval out of band. Approval recording is not yet an authorized action. */
+/**
+ * Record an approval through the authorized action, acting as the approver.
+ *
+ * Every primary-path mutation in these tests goes through an authorized action rather
+ * than a direct table write, so the tests exercise the same path production will.
+ */
 export async function recordApproval(
+  s: Scenario,
+  versionId: string,
+  approverId: string,
+  decision: 'approved' | 'rejected' = 'approved',
+): Promise<string> {
+  // The action requires the item explicitly and verifies the pairing; the helper looks
+  // it up so callers need not thread it through. A test passes a deliberately wrong
+  // item id to prove that check is real.
+  await s.asOwner()
+  const owner = await s.client.query<{ content_item_id: string }>(
+    'SELECT content_item_id FROM cms.content_versions WHERE id = $1', [versionId])
+  const itemId = owner.rows[0]!.content_item_id
+  await s.act(approverId)
+  const { rows } = await s.client.query<{ id: string }>(
+    'SELECT workflow.record_approval($1,$2,$3,$4,$5,$6::jsonb) AS id',
+    [
+      approverId,
+      itemId,
+      versionId,
+      decision,
+      `test-request-${versionId.slice(0, 8)}`,
+      JSON.stringify({ summary: 'Reviewed and sound.', basis: 'editorial review' }),
+    ],
+  )
+  return rows[0]!.id
+}
+
+/**
+ * Write an approval row directly, past the authorized action.
+ *
+ * Only for tests that exercise a database-level control — the separation-of-duties
+ * trigger, or the gate that backstops a row reaching the table another way. Never a
+ * shortcut for the primary path.
+ */
+export async function insertApprovalDirect(
   s: Scenario,
   versionId: string,
   approverId: string,

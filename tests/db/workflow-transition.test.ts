@@ -1,6 +1,6 @@
 import { describe, it, expect, afterAll } from 'vitest'
 import { asSuperuser, as, ANON, closeTestPool, expectDenied } from '../helpers/db'
-import { scenario, recordApproval } from '../helpers/editorial'
+import { scenario, recordApproval, insertApprovalDirect } from '../helpers/editorial'
 
 /**
  * workflow.perform_transition — the enforcement point for the editorial state machine.
@@ -340,7 +340,7 @@ describe('separation of duties', () => {
       // ever consulted — a stronger control, since it holds for any writer.
       await s.client.query('SAVEPOINT before_self_approval')
       const error = await expectDenied(
-        () => recordApproval(s, versionId, s.actors.author),
+        () => insertApprovalDirect(s, versionId, s.actors.author),
         'the author recording their own approval',
       )
       expect(error.message).toMatch(/separation of duties/i)
@@ -377,7 +377,7 @@ describe('separation of duties', () => {
       // A pre-existing trigger, stricter than the gate: reviewer and approver of a
       // round must differ.
       const error = await expectDenied(
-        () => recordApproval(s, versionId, s.actors.reviewer),
+        () => insertApprovalDirect(s, versionId, s.actors.reviewer),
         'approval by the same person who reviewed the round',
       )
       expect(error.message).toMatch(/separation of duties/i)
@@ -668,7 +668,7 @@ describe('SECURITY DEFINER boundary', () => {
     expect(rows[0]!.can).toBe(false)
   })
 
-  it('authenticated can execute exactly the two approved entry points', async () => {
+  it('authenticated can execute exactly the approved entry points', async () => {
     const { rows } = await asSuperuser((c) =>
       c.query<{ fn: string }>(
         `SELECT n.nspname||'.'||p.proname AS fn
@@ -677,7 +677,13 @@ describe('SECURITY DEFINER boundary', () => {
             AND has_function_privilege('authenticated', p.oid, 'EXECUTE')
             AND p.prosecdef
           ORDER BY 1`))
-    expect(rows.map((r) => r.fn)).toEqual(['workflow.perform_transition', 'workflow.record_review'])
+    // An allowlist, deliberately exact: a new executable definer function in this
+    // schema must be a decision, not something that appears by accident.
+    expect(rows.map((r) => r.fn)).toEqual([
+      'workflow.perform_transition',
+      'workflow.record_approval',
+      'workflow.record_review',
+    ])
   })
 
   it('anon cannot execute the transition function at all', async () => {

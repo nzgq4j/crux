@@ -8,8 +8,10 @@ import { scenario, recordApproval } from '../helpers/editorial'
  * draft creation → submit for review → review recorded → approval → atomic
  * publication → the public can read it.
  *
- * Every step runs as the actor who is supposed to perform it, through the authorized
- * functions rather than by writing tables directly. The assertions at each step are
+ * Every primary-path mutation runs as the actor who is supposed to perform it, through
+ * an authorized action — perform_transition, record_review, record_approval — rather
+ * than by writing a table directly. No step of the happy path touches
+ * workflow.reviews, workflow.approvals or workflow.content_state with an INSERT. The assertions at each step are
  * about what a *different* actor can see, because that is what the workflow is for: an
  * unpublished version is invisible to the public, and becomes visible at exactly one
  * moment.
@@ -59,8 +61,18 @@ describe('draft to published, and only then public', () => {
         [versionId, 'approved', 'accurate and well sourced'])
       expect(review.rows[0]!.id).toBeTruthy()
 
-      // --- 4. Approval --------------------------------------------------------
-      await recordApproval(s, versionId, s.actors.editor)
+      // --- 4. Approval, through the authorized action --------------------------
+      const approvalId = await recordApproval(s, versionId, s.actors.editor)
+      expect(approvalId).toMatch(/^[0-9a-f-]{36}$/)
+
+      await s.asOwner()
+      const approval = await s.client.query(
+        'SELECT decision, review_round, approver_id FROM workflow.approvals WHERE version_id=$1',
+        [versionId])
+      expect(approval.rows[0]).toMatchObject({
+        decision: 'approved', review_round: 1, approver_id: s.actors.editor,
+      })
+
       await s.act(s.actors.editor)
       const approved = await s.client.query<{ t: string }>(
         'SELECT workflow.perform_transition($1,$2) AS t', [versionId, 'approved'])
@@ -150,6 +162,7 @@ describe('draft to published, and only then public', () => {
         'approved->published',
       ])
       expect(rows.some((r) => r.action === 'workflow.review_recorded')).toBe(true)
+      expect(rows.some((r) => r.action === 'workflow.approval_recorded')).toBe(true)
       // Every recorded step succeeded; nothing was refused along the happy path.
       expect(rows.every((r) => r.decision !== 'denied')).toBe(true)
     })
@@ -185,6 +198,9 @@ describe('draft to published, and only then public', () => {
         `INSERT INTO cms.content_version_modules (version_id, fragment_id, module_key, position, payload)
          VALUES ($1,'intro','prose',1,'{"text":"The body of the fixture article."}'::jsonb)`,
         [second])
+      // Draft creation, not a workflow mutation: a version enters the workflow with an
+      // initial state row. Authoring has no authorized action yet — every *transition*
+      // below goes through one.
       await s.client.query(
         `INSERT INTO workflow.content_state (version_id, state_key) VALUES ($1,'draft')`, [second])
       for (const [user, role] of [

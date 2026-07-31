@@ -1,6 +1,6 @@
 import { describe, it, expect, afterAll } from 'vitest'
 import { asSuperuser, closeTestPool, expectDenied } from '../helpers/db'
-import { scenario, recordApproval, type Scenario } from '../helpers/editorial'
+import { scenario, recordApproval, insertApprovalDirect, type Scenario } from '../helpers/editorial'
 
 /**
  * workflow.record_review — the only path that writes an editorial review.
@@ -141,7 +141,7 @@ describe('an approver cannot also be the reviewer', () => {
 
       await s.client.query('SAVEPOINT before_same_person')
       const error = await expectDenied(
-        () => recordApproval(s, versionId, s.actors.reviewer),
+        () => insertApprovalDirect(s, versionId, s.actors.reviewer),
         'the reviewer approving the round they reviewed',
       )
       expect(error.message).toMatch(/separation of duties/i)
