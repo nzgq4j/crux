@@ -22,6 +22,19 @@ export interface ContentSummary {
 export interface ContentDetail extends ContentSummary {
   version_id: string
   item_id: string
+  /** Part of the document's name, distinct from standfirst (Batch A, S1). */
+  subtitle: string | null
+  /**
+   * The date the document itself states, with the precision it stated it at
+   * (Batch A, S3). Distinct from published_at, which is when the platform published.
+   * Render only to `stated_date_precision`, or a day the document never gave is
+   * fabricated.
+   */
+  stated_date: string | null
+  stated_date_precision: 'day' | 'month' | 'year' | null
+  /** Author-applied marking, rendered verbatim. Never an access-control input. */
+  distribution_marking: string | null
+  distribution_marking_repeats: boolean | null
   executive_summary: string | null
   methodology: string | null
   limitations: string | null

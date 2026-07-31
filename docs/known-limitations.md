@@ -162,3 +162,33 @@ yet started.
 - **Remediation:** Synthetic fixtures for the workflow states — a review history is
   not research content, so inventing one fabricates nothing. Tracked as N04 in
   [`docs/corpus/09-product-backlog.md`](corpus/09-product-backlog.md).
+
+### A draft or absent research URL returns HTTP 200
+
+- **Where:** `src/app/research/[slug]/page.tsx`.
+- **What:** Requesting a draft item's slug returns **200** with the page shell and the
+  not-found body. No content leaks — the draft's title, standfirst and body are all
+  absent from the response, because RLS refuses the read — but the status line is
+  wrong, because `notFound()` inside a streamed Suspense boundary cannot change
+  headers that have already been sent.
+- **Impact:** correctness and SEO, not security. A crawler sees 200 for a page that
+  does not exist. Verified against the seeded draft during the first publication
+  (`docs/corpus/12-first-publication-lessons.md` §12.8).
+- **Remediation:** resolve existence before the streaming boundary opens, so the
+  status is decided before the first byte is sent.
+
+### Running the application against local data needs two deliberate steps
+
+- **Where:** `.env.production`, and `next start`.
+- **What:** `NEXT_PUBLIC_*` values are inlined at build time *and* re-read by
+  `next start`, so a local run picks up the deployed Supabase URL, selects the
+  PostgREST backend and fails with `403 for published_content` — on every article,
+  which looks like a data problem and is not. Separately, `next start` sets
+  `NODE_ENV=production`, so `CRUX_ENV` fails closed to production and
+  `resolveDatabaseUrl` correctly refuses a loopback `DATABASE_URL`.
+- **Impact:** two false diagnoses cost real time during the first publication
+  (`docs/corpus/12` §12.9). Neither is a defect: the second is Workstream 1's control
+  working as designed.
+- **Remediation:** a documented recipe in `docs/local-development.md` — move
+  `.env.production` aside for both the build and the start, and set
+  `CRUX_ENV=development`.

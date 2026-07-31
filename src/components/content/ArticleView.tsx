@@ -48,9 +48,31 @@ export function ArticleView({
       {/* --- Header ------------------------------------------------------- */}
       <header className="border-b border-[--color-rule] py-12">
         <TypeLabel type={content.content_type_key} />
+        {/*
+          The subtitle sits inside the h1 (Batch A, S1; docs/corpus/05 D1). It is part
+          of the document's name, so a sibling heading would either add a phantom level
+          to the outline or leave the accessible name incomplete.
+        */}
         <h1 className="mt-3 max-w-[24ch] font-[--font-display] text-[--text-h1] font-semibold leading-[--text-h1--line-height] tracking-[--text-h1--letter-spacing]">
           {content.title}
+          {content.subtitle && (
+            <span className="mt-2 block text-[--text-h3] font-normal text-[--color-ink-muted]">
+              {content.subtitle}
+            </span>
+          )}
         </h1>
+
+        {content.distribution_marking && (
+          /*
+            The author's own marking, rendered verbatim (docs/corpus/05 D2). Text, not
+            a coloured band — accessibility rule 26 — and deliberately neutral in tone:
+            this platform does not enforce it, and copy that implied otherwise would be
+            a claim it cannot honour (docs/corpus/10 R3).
+          */
+          <p className="mt-4 font-[--font-mono] text-[--text-caption] text-[--color-ink-muted]">
+            {content.distribution_marking}
+          </p>
+        )}
 
         {content.standfirst && (
           <p className="mt-5 max-w-[--container-reading] text-[--text-lede] leading-[--text-lede--line-height] text-[--color-ink-muted]">
@@ -72,15 +94,13 @@ export function ArticleView({
               ))}
             </p>
           )}
-          {content.published_at && (
-            <time dateTime={new Date(content.published_at).toISOString()}>
-              {new Date(content.published_at).toLocaleDateString('en-GB', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })}
-            </time>
-          )}
+          {/*
+            The date the document states, at the precision it stated it (Batch A, S3).
+            Falls back to the publication timestamp only when the document gave no date
+            of its own. Rendering published_at for an April 2026 assessment printed
+            "31 July 2026" on the first page published — docs/corpus/12 §12.6.
+          */}
+          <StatedDate content={content} />
           <span>{content.reading_minutes} min read</span>
           <span className="font-[--font-mono]">{content.public_id}</span>
         </div>
@@ -265,6 +285,44 @@ function termHref(t: Term): string {
   if (t.vocabulary === 'capability') return `/capabilities/${t.slug}`
   if (t.vocabulary === 'role') return `/roles/${t.slug}`
   return `/topics/${t.slug}`
+}
+
+/**
+ * The document's own date, never widened beyond the precision it was given at.
+ *
+ * `dateTime` carries only as much of the ISO 8601 value as the precision supports, so
+ * a machine reader is told "April 2026" rather than "1 April 2026".
+ */
+function StatedDate({ content }: { content: ContentDetail }) {
+  if (content.stated_date && content.stated_date_precision) {
+    const d = new Date(content.stated_date)
+    const precision = content.stated_date_precision
+    const iso =
+      precision === 'year'
+        ? String(d.getUTCFullYear())
+        : precision === 'month'
+          ? `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+          : d.toISOString().slice(0, 10)
+    const label = d.toLocaleDateString('en-GB', {
+      ...(precision === 'day' ? { day: 'numeric' as const } : {}),
+      ...(precision === 'year' ? {} : { month: 'long' as const }),
+      year: 'numeric',
+      timeZone: 'UTC',
+    })
+    return <time dateTime={iso}>{label}</time>
+  }
+  if (content.published_at) {
+    return (
+      <time dateTime={new Date(content.published_at).toISOString()}>
+        {new Date(content.published_at).toLocaleDateString('en-GB', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })}
+      </time>
+    )
+  }
+  return null
 }
 
 function CorrectionNotice({
