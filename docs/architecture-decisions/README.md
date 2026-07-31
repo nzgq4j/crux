@@ -38,7 +38,10 @@ What this makes easy, what it makes hard, and what it commits us to.
 
 | ADR | Title | Block | Status |
 |---|---|---|---|
-| — | None recorded yet | — | — |
+| [0003](0003-sql-interpolation-detection.md) | Detect SQL interpolation by parsing, not by matching lines | 22 | Accepted |
+
+`0001` and `0002` are reserved for Blocks 01 and 02, which have not been
+implemented; see the table below.
 
 ## ADRs required by the architecture
 

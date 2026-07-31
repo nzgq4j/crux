@@ -177,5 +177,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      # The SQL interpolation check parses with the TypeScript compiler rather than
+      # matching lines, so this job needs dependencies. See ADR 0003.
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
       - name: Run conformance checks
         run: bash scripts/check-conformance.sh
