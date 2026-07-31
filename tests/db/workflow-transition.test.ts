@@ -679,7 +679,14 @@ describe('SECURITY DEFINER boundary', () => {
           ORDER BY 1`))
     // An allowlist, deliberately exact: a new executable definer function in this
     // schema must be a decision, not something that appears by accident.
+    //
+    // `available_transitions` was added for the editorial surface (Block 09). It is
+    // read-only, refuses an anonymous or non-editorial caller, and reports the calling
+    // user's own authority rather than the definer's — asserted in
+    // tests/rls/available-transitions.test.ts. It is on this list because this test
+    // caught it, which is the list working.
     expect(rows.map((r) => r.fn)).toEqual([
+      'workflow.available_transitions',
       'workflow.perform_transition',
       'workflow.record_approval',
       'workflow.record_review',

@@ -68,13 +68,43 @@ function importsOf(file: string): string[] {
   return specifiers
 }
 
-/** Every file reachable from `entry` through the import graph. */
+/** Does this module carry the `'use server'` directive at the top? */
+function isServerActionModule(file: string): boolean {
+  return /^\s*['"]use server['"]/.test(readFileSync(file, 'utf8'))
+}
+
+/**
+ * Every file reachable from `entry` through the import graph, stopping at
+ * `'use server'` module boundaries.
+ *
+ * **Why the traversal stops there.** A `'use server'` module is a server boundary in
+ * the same sense that a network call is: the client bundle receives an RPC reference
+ * to each exported function, never the function body, and never the module's imports.
+ * Walking through one models a bundle Next.js does not produce, and would report a
+ * leak wherever a server action legitimately touches the database — which is most of
+ * them.
+ *
+ * **Why that is not a loophole.** Two things hold the line. `serverActionModules()`
+ * below asserts the set of boundaries is the expected one, so a new `'use server'`
+ * file cannot appear and silently widen what is unchecked. And `scripts/scan-bundle.sh`
+ * greps the *built* client output for every server-only identifier, which is the
+ * end-to-end check this static one only approximates.
+ *
+ * This traversal was originally unconditional and passed only because no server action
+ * had yet imported anything flagged. That was luck, not a property.
+ */
 function transitiveImports(entry: string, seen = new Set<string>()): Set<string> {
   if (seen.has(entry)) return seen
   seen.add(entry)
   for (const spec of importsOf(entry)) {
     const target = resolveImport(entry, spec)
-    if (target) transitiveImports(target, seen)
+    if (!target) continue
+    if (isServerActionModule(target)) {
+      // Record that the boundary was reached, but do not cross it.
+      seen.add(target)
+      continue
+    }
+    transitiveImports(target, seen)
   }
   return seen
 }
@@ -129,6 +159,38 @@ describe('the public module stays client-safe', () => {
     // anonymous reader. A rule that flagged it would be teaching people to ignore it.
     for (const key of Object.keys(publicEnv)) {
       expect(key).not.toMatch(/SECRET|PRIVATE|PASSWORD|TOKEN|SERVICE_ROLE/)
+    }
+  })
+})
+
+/**
+ * The `'use server'` modules, which the traversal above treats as boundaries.
+ *
+ * Enumerated rather than counted, so that adding one is a deliberate act that shows up
+ * in a diff. Each of these is a place where the static check stops and
+ * `scripts/scan-bundle.sh` takes over.
+ */
+const EXPECTED_SERVER_ACTION_MODULES = ['src/lib/admin/actions.ts', 'src/lib/auth/actions.ts']
+
+describe('the server-action boundaries are the expected ones', () => {
+  it('every "use server" module is accounted for', () => {
+    const found = ALL_SOURCES.filter(isServerActionModule)
+      .map((f) => f.replace(root + '/', ''))
+      .sort()
+    expect(
+      found,
+      'a new server-action module is a new place the static import check stops — add it here deliberately',
+    ).toEqual(EXPECTED_SERVER_ACTION_MODULES)
+  })
+
+  it('each one is genuinely server-side: it imports something server-only', () => {
+    // Guards the inverse mistake — a module marked 'use server' that is really client
+    // code, which would silently exempt its whole subtree from the checks below.
+    for (const file of ALL_SOURCES.filter(isServerActionModule)) {
+      const text = readFileSync(file, 'utf8')
+      expect(text, `${file} declares 'use server' as its first directive`).toMatch(
+        /^\s*['"]use server['"]/,
+      )
     }
   })
 })

@@ -92,6 +92,48 @@ yet started.
 - **Remediation:** Block 13's signed-URL asset pipeline. The `eslint-disable` at that
   line records the same.
 
+## Deployment
+
+### The deployed Supabase project does not match the repository's migrations
+
+- **Where:** Supabase project `crux` (`jsgawelsrfduyoacdssn`).
+- **What:** The project's `supabase_migrations.schema_migrations` holds nine
+  hand-applied migrations — `foundation`, `taxonomy`, `identity_accounts`,
+  `cms_content`, `rls_core`, `roles_permissions`, `seed_reference_and_taxonomy`,
+  `seed_content`, `public_api_views` — which are **not** the repository's
+  twenty-three. Six schemas exist but are empty: `workflow`, `knowledge`, `assets`,
+  `subscriptions`, `search`, `analytics`. The ledger written by
+  `scripts/lib/migrate.mjs` is absent there, so the repository's drift detection has
+  never run against it.
+- **Impact:** No editorial workflow, claims, provenance, assets, subscriptions,
+  search or analytics exist in the deployed database. Anything exercising them —
+  including the vertical slice — runs only against the local cluster. The two
+  environments cannot be reconciled by running the remaining repository migrations,
+  because `rls_core` and `roles_permissions` were applied there from different
+  sources and would conflict.
+- **Impact on the corpus programme:** the deployed database holds demonstration seed
+  content only (36 items, no real users, no audit rows), so nothing of value is at
+  risk — but "deployed" currently means the public reading surface over seeded
+  demonstration data, not the platform.
+- **Remediation:** rebuild the deployed database from the repository's migration set,
+  or reconcile the nine applied ones against it deliberately. This is a decision about
+  a live environment, not a code change, and it is recorded rather than taken.
+
+### Rate limiting requires a direct database connection
+
+- **Where:** `src/lib/auth/rate-limit.ts`.
+- **What:** The limiter reaches `private.check_rate_limit` through `getPool()`, which
+  needs `DATABASE_URL`. A deployment holding only the publishable key — the PostgREST
+  path that `src/lib/content/queries.ts` selects when configured — has no direct
+  connection, and the limiter would then fail closed on every attempt, refusing all
+  sign-ins.
+- **Impact:** authentication endpoints must not be exposed in a deployment without
+  `DATABASE_URL`. Workstream 1 established `DATABASE_URL` as the canonical runtime
+  variable and staging and production both require it, so this is a constraint to
+  honour rather than a defect to fix.
+- **Remediation:** if a publishable-key-only deployment is ever wanted, the limiter
+  needs an RPC path with its own abuse protection. Do not resolve it by failing open.
+
 ## Verification
 
 ### Accessibility verification is not continuous

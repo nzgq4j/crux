@@ -51,6 +51,17 @@ const serverSchema = z.object({
 
   SUPABASE_SECRET_KEY: z.string().min(1).optional(),
 
+  /**
+   * Salt for the abuse-limiter's subject digest (rules/security.md 6, 22).
+   *
+   * Optional, and falls back to DATABASE_URL — itself server-only and
+   * deployment-specific — so that authentication is not bricked by an unset variable.
+   * Set it explicitly in production: rotating it independently of the database
+   * password is the only way to invalidate the digest space without a credential
+   * rotation, and sharing the value with the connection string couples the two.
+   */
+  AUTH_RATE_LIMIT_SALT: z.string().min(16).optional(),
+
   EMAIL_PROVIDER: z.string().optional(),
   EMAIL_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().optional(),
