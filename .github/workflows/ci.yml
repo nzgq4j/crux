@@ -1,0 +1,181 @@
+name: CI
+
+# Block 22 quality gates and Block 23 §45.5.2 pipeline stages:
+# lint, typecheck, unit tests, integration tests, migration step, build.
+#
+# The build fails on: type errors, lint errors, build failure, a detected secret, a
+# dependency finding above the threshold, or any failing test. Thresholds are not
+# lowered to make a build green (rules/testing.md 20).
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '22'
+  # pgvector/pgvector:pg16 matches the local development version and carries the
+  # `vector` extension, which the stock postgres image does not.
+  POSTGRES_IMAGE: pgvector/pgvector:pg16
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Static gates. Cheap, so they run first and independently of the database.
+  # ---------------------------------------------------------------------------
+  static:
+    name: Lint, types, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Production build
+        run: npm run build
+        env:
+          # The build must not require a database. If a page cannot render without
+          # one it must degrade, not fail — so we deliberately point at nothing.
+          DATABASE_URL: postgresql://unused@127.0.0.1:1/unused
+          NEXT_PUBLIC_SITE_URL: https://example.invalid
+
+  # ---------------------------------------------------------------------------
+  # Database, RLS and denied-access tests against a real PostgreSQL with pgvector.
+  # These are the gates that actually protect the platform's guarantees.
+  # ---------------------------------------------------------------------------
+  database:
+    name: Migrations, RLS and denied-access tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: crux
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/crux
+      CRUX_ENV: test
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client
+          psql --version
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      # §45.5.3: migrations run, then schema integrity is validated, then the RLS
+      # suite runs. Each step gates the next.
+      - name: Apply migrations
+        run: bash scripts/db-migrate.sh
+
+      - name: Validate schema integrity
+        run: bash scripts/db-verify.sh
+
+      - name: Seed demonstration content
+        run: bash scripts/db-seed.sh
+
+      - name: Test-harness grants
+        run: bash scripts/db-test-setup.sh
+
+      - name: Database invariants and meta-tests
+        run: npm run test:db
+
+      - name: RLS and denied-access tests
+        run: npm run test:rls
+
+      # Proves the documented setup path actually works from empty, which is the
+      # claim docs/local-development.md makes.
+      - name: Reset reproducibility
+        run: |
+          bash scripts/db-reset.sh
+          bash scripts/db-test-setup.sh
+          npm test
+
+  # ---------------------------------------------------------------------------
+  # Security gates. A finding here fails the build; the threshold is not lowered.
+  # ---------------------------------------------------------------------------
+  security:
+    name: Secret and dependency scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # Full history: a secret committed and later removed is still a leaked
+          # secret, so the scan must see every commit, not just the tip.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Secret scan (working tree and history)
+        run: bash scripts/scan-secrets.sh
+
+      - name: Dependency vulnerabilities
+        run: |
+          # Fails on high or critical. Moderate and below are reported, not fatal.
+          # Raising the code to the threshold is the fix; lowering the threshold is
+          # not (rules/testing.md 20).
+          npm audit --audit-level=high
+
+      - name: Verify no secret reached the client bundle
+        run: |
+          npm run build
+          bash scripts/scan-bundle.sh
+        env:
+          DATABASE_URL: postgresql://unused@127.0.0.1:1/unused
+          NEXT_PUBLIC_SITE_URL: https://example.invalid
+
+  # ---------------------------------------------------------------------------
+  # Architecture conformance. Cheap structural checks that catch the classes of
+  # drift this codebase has actually suffered.
+  # ---------------------------------------------------------------------------
+  conformance:
+    name: Architecture conformance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Run conformance checks
+        run: bash scripts/check-conformance.sh

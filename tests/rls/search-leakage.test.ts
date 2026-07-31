@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { as, ANON, asSuperuser, seedFixture, expectDenied, closeTestPool, type Fixture } from '../helpers/db'
+import { as, asSuperuser, seedFixture, expectDenied, closeTestPool, type Fixture } from '../helpers/db'
 
 /**
  * Block 15 / §45.1.8 — search never returns unauthorized content.

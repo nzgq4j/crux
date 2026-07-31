@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
-# Drop and recreate the development database, then migrate and seed.
+# Drop and recreate the database, then migrate and seed.
 # DESTRUCTIVE. Refuses to run when CRUX_ENV is production.
-set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
 
-PGPORT="${PGPORT:-5432}"
-PGDATABASE="${PGDATABASE:-crux}"
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(repo_root)"
+DB="$(db_name)"
 
 if [ "${CRUX_ENV:-development}" = "production" ]; then
   echo "refusing to reset a production database" >&2
   exit 1
 fi
 
-echo "==> dropping $PGDATABASE"
-su postgres -c "psql -p $PGPORT -d postgres -qc \"
-  SELECT pg_terminate_backend(pid) FROM pg_stat_activity
-   WHERE datname = '$PGDATABASE' AND pid <> pg_backend_pid();\"" >/dev/null
-su postgres -c "psql -p $PGPORT -d postgres -qc 'DROP DATABASE IF EXISTS $PGDATABASE;'"
-su postgres -c "psql -p $PGPORT -d postgres -qc 'CREATE DATABASE $PGDATABASE;'"
+wait_for_db
+
+echo "==> dropping $DB"
+psql_admin -qc "SELECT pg_terminate_backend(pid) FROM pg_stat_activity
+                 WHERE datname = '$DB' AND pid <> pg_backend_pid();" >/dev/null
+psql_admin -qc "DROP DATABASE IF EXISTS \"$DB\";"
+psql_admin -qc "CREATE DATABASE \"$DB\";"
 
 bash "$ROOT/scripts/db-migrate.sh"
 bash "$ROOT/scripts/db-seed.sh"

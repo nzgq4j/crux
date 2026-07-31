@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 # Load deterministic demonstration content. Idempotent and safe to re-run.
-set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
 
-PGPORT="${PGPORT:-5432}"
-PGDATABASE="${PGDATABASE:-crux}"
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(repo_root)"
+wait_for_db
 
-echo "==> seeding $PGDATABASE"
-su postgres -c "psql -p $PGPORT -d $PGDATABASE -v ON_ERROR_STOP=1 -q -f $ROOT/supabase/seed.sql"
+echo "==> seeding $(db_name)"
+psql_db -q -f "$ROOT/supabase/seed.sql"
 echo "==> seed complete"

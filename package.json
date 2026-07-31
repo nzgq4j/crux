@@ -22,7 +22,11 @@
     "test:db": "vitest run tests/db",
     "test:rls": "vitest run tests/rls",
     "test:e2e": "playwright test",
-    "verify": "npm run typecheck && npm run lint && npm run test"
+    "verify": "npm run typecheck && npm run lint && npm run check:conformance && npm run scan:secrets && npm test",
+    "db:verify": "bash scripts/db-verify.sh",
+    "scan:secrets": "bash scripts/scan-secrets.sh",
+    "scan:bundle": "bash scripts/scan-bundle.sh",
+    "check:conformance": "bash scripts/check-conformance.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
@@ -40,10 +44,16 @@
     "@types/pg": "^8.11.10",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "eslint": "^9.17.0",
+    "eslint": "^9.40.0",
     "eslint-config-next": "^16.2.12",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.7.2",
     "vitest": "^4.1.10"
+  },
+  "overrides": {
+    "postcss": "^8.5.18",
+    "sharp": "^0.35.0",
+    "brace-expansion": "^5.0.8",
+    "minimatch": "^10.0.3"
   }
 }
