@@ -153,7 +153,8 @@ describe('structural guarantees', () => {
           SELECT n.nspname || '.' || c.relname AS t
             FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
            WHERE c.relkind = 'r'
-             AND n.nspname IN ('cms','taxonomy','identity','accounts','workflow','knowledge','audit')
+             AND n.nspname IN ('cms','taxonomy','identity','accounts','workflow',
+                               'knowledge','audit','assets','subscriptions','search','analytics')
              AND NOT EXISTS (
                SELECT 1 FROM pg_policies p
                 WHERE p.schemaname = n.nspname AND p.tablename = c.relname)
@@ -161,6 +162,27 @@ describe('structural guarantees', () => {
       ).rows,
     )
     expect(rows.map((r) => r.t)).toEqual([])
+  })
+
+  it('every workflow transition is performable by some role', async () => {
+    // Guards the drift that produced migration 20260731001400: a transition whose
+    // required permission exists but is granted to nobody is a silent deadlock.
+    const rows = await asSuperuser(async (c) =>
+      (await c.query<{ transition: string; problem: string }>('SELECT * FROM private.assert_transitions_reachable()')).rows,
+    )
+    expect(rows).toEqual([])
+  })
+
+  it('no two content permissions are near-duplicates of each other', async () => {
+    // e.g. content.edit alongside content.edit_any, or submit_review alongside
+    // submit_for_review — a reader cannot tell which one a policy checks.
+    const keys = await asSuperuser(async (c) =>
+      (await c.query<{ key: string }>("SELECT key FROM identity.permissions WHERE resource='content' ORDER BY key")).rows.map(
+        (r) => r.key,
+      ),
+    )
+    const collisions = keys.filter((a) => keys.some((b) => b !== a && (b.startsWith(a + '_') || b.startsWith(a))))
+    expect(collisions).toEqual([])
   })
 
   it('every SECURITY DEFINER function pins its search_path', async () => {

@@ -25,6 +25,7 @@
 --   DROP FUNCTION private.enqueue_search_embed_job();
 --   DROP FUNCTION private.purge_search_document();
 --   DROP FUNCTION private.guard_search_document_published();
+--   DROP FUNCTION private.guard_embedding_version();
 -- The `search` schema itself belongs to Block 04 and is not dropped here.
 
 -- ---------------------------------------------------------------------------
@@ -198,6 +199,11 @@ CREATE INDEX chunks_fragment_idx ON search.chunks (document_id, fragment_id) WHE
 CREATE TABLE search.embeddings (
   id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   target_kind    text NOT NULL CHECK (target_kind IN ('chunk', 'claim', 'finding')),
+  -- The published version whose indexing produced this vector, on EVERY row
+  -- including claim and finding rows. Two reasons: withdrawal must be able to
+  -- purge every vector derived from a version in one statement, and a
+  -- re-embedding pass must be scopeable to a version so it is resumable.
+  version_id     uuid NOT NULL REFERENCES cms.content_versions(id) ON DELETE CASCADE,
   chunk_id       uuid REFERENCES search.chunks(id) ON DELETE CASCADE,
   -- Soft reference to knowledge.claims(id). The FK is attached below only when
   -- the knowledge schema is present, so this migration applies both to a full
@@ -242,8 +248,10 @@ BEGIN
 END
 $$;
 
-CREATE INDEX embeddings_chunk_idx ON search.embeddings (chunk_id) WHERE chunk_id IS NOT NULL;
-CREATE INDEX embeddings_claim_idx ON search.embeddings (claim_id) WHERE claim_id IS NOT NULL;
+CREATE INDEX embeddings_chunk_idx   ON search.embeddings (chunk_id) WHERE chunk_id IS NOT NULL;
+CREATE INDEX embeddings_claim_idx   ON search.embeddings (claim_id) WHERE claim_id IS NOT NULL;
+-- Access path: purge on withdrawal, and "re-embed one version" during a rollout.
+CREATE INDEX embeddings_version_idx ON search.embeddings (version_id);
 -- Access path: "which rows are on an outdated model?" during a re-embedding pass.
 CREATE INDEX embeddings_model_idx ON search.embeddings (model_id, target_kind);
 
@@ -359,7 +367,7 @@ CREATE TABLE search.index_queue (
 COMMENT ON TABLE search.index_queue IS
   'Asynchronous index and embed jobs (§45.3.3, §45.1.12). Enqueued by the publication transaction; drained by the Block 03 provider worker. Records attempts, last error and dead-letter state so a provider outage degrades retrieval freshness and never publication.';
 COMMENT ON COLUMN search.index_queue.job_type IS
-  'index = rebuild search.documents source text and chunks (no external provider). embed = call the embedding provider through the Block 03 abstraction.';
+  'index = rebuild search.documents source text and chunks (no external provider). embed = (re)embed every chunk, claim and finding belonging to the version, through the Block 03 provider abstraction.';
 
 CREATE INDEX index_queue_ready_idx ON search.index_queue (available_at, id)
   WHERE status = 'pending';
@@ -617,6 +625,46 @@ CREATE TRIGGER documents_published_only
   BEFORE INSERT OR UPDATE OF version_id ON search.documents
   FOR EACH ROW EXECUTE FUNCTION private.guard_search_document_published();
 
+-- An embedding's version_id must be the truth, not a hint: the withdrawal purge
+-- relies on it. For a chunk embedding it is derivable, so it is derived when
+-- omitted and rejected when contradicted.
+CREATE OR REPLACE FUNCTION private.guard_embedding_version()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = pg_catalog, public
+AS $$
+DECLARE
+  v_version uuid;
+BEGIN
+  IF NEW.chunk_id IS NOT NULL THEN
+    SELECT d.version_id INTO v_version
+      FROM search.chunks c
+      JOIN search.documents d ON d.id = c.document_id
+     WHERE c.id = NEW.chunk_id;
+
+    -- v_version NULL means the chunk does not exist; let the foreign key say so.
+    IF v_version IS NOT NULL THEN
+      IF NEW.version_id IS NULL THEN
+        NEW.version_id := v_version;
+      ELSIF NEW.version_id <> v_version THEN
+        RAISE EXCEPTION 'embedding version_id % contradicts the chunk''s document version %',
+          NEW.version_id, v_version
+          USING ERRCODE = 'check_violation';
+      END IF;
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+COMMENT ON FUNCTION private.guard_embedding_version() IS
+  'BEFORE INSERT/UPDATE on search.embeddings. Single responsibility: keep version_id truthful for chunk embeddings (derive when omitted, reject when contradicted) so the withdrawal purge is complete. Claim and finding rows must supply it; the NOT NULL constraint enforces that.';
+
+CREATE TRIGGER embeddings_version_guard
+  BEFORE INSERT OR UPDATE OF version_id, chunk_id ON search.embeddings
+  FOR EACH ROW EXECUTE FUNCTION private.guard_embedding_version();
+
 -- Publication enqueues indexing (§45.3.3). The transaction that publishes must
 -- not wait on, or fail because of, an indexing or embedding provider.
 CREATE OR REPLACE FUNCTION private.enqueue_search_index_job()
@@ -691,13 +739,17 @@ LANGUAGE plpgsql
 SET search_path = pg_catalog, public
 AS $$
 BEGIN
-  DELETE FROM search.documents WHERE version_id = NEW.id;
+  -- Claim and finding vectors hang off knowledge.claims, not off the document,
+  -- so the document cascade alone would leave them retrievable. Delete by
+  -- version first, then the document (which cascades chunks and their vectors).
+  DELETE FROM search.embeddings WHERE version_id = NEW.id;
+  DELETE FROM search.documents  WHERE version_id = NEW.id;
   RETURN NULL;
 END;
 $$;
 
 COMMENT ON FUNCTION private.purge_search_document() IS
-  'AFTER UPDATE on cms.content_versions. Single responsibility: delete the search document (and, by cascade, its chunks and embeddings) when a version leaves the published state. Withdrawal must be immediate and synchronous — it is a removal, so it cannot be allowed to sit in a queue behind a provider outage.';
+  'AFTER UPDATE on cms.content_versions. Single responsibility: remove a version from the retrieval index — every embedding scoped to it, then the document with its chunks — when it leaves the published state. Withdrawal must be immediate and synchronous: it is a removal, so it cannot sit in a queue behind a provider outage.';
 
 CREATE TRIGGER content_versions_purge_search_document
   AFTER UPDATE ON cms.content_versions

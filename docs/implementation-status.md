@@ -1,75 +1,97 @@
 # Crux Implementation Status
 
-## Repository Initialization
+## Repository
 
 - Repository: nzgq4j/crux
 - Default branch: main
-- Initialization branch: claude/initialize-crux-repository-w49p3o
-- Initialization date: 2026-07-31
-- Architecture source: The approved modular architecture supplied directly in the
-  Claude Code initialization instruction (acceptable source type 1), plus the verbatim
-  Section 45 Implementation Checklist supplied subsequently. See
-  `docs/architecture-installation-report.md` for the source resolution record.
-- Architecture version: 1.1.0
-- Architecture installation status: Installed — 29 prompt blocks, 12 agent contracts,
-  9 rule files. **No outstanding source gaps.** The Section 45 gap recorded at
-  installation was closed on 2026-07-31. Block 26 was rebuilt from the verbatim text,
-  and the reconciliation was applied across Blocks 04, 05, 06, 07, 08, 09, 11, 13, 15,
-  16, 17, 19, 23 and the `backend`, `database` and `content-modeling` rule files. See
-  the manifest's Section 45 Reconciliation record.
+- Working branch: claude/initialize-crux-repository-w49p3o
+- Architecture version: 1.1.0 (Section 45 reconciled)
+- Last updated: 2026-07-31
 
 ## Status Vocabulary
 
 | Status | Meaning |
 |---|---|
-| Installed | The prompt contract exists and is complete. Applies to Block 00. |
-| Ready | Every direct dependency is Complete with evidence. May be started. |
-| Blocked | At least one direct dependency is incomplete. |
-| In progress | Started; completion report not yet produced. |
-| Remediation | Acceptance criteria failed; returned to the owning agent. |
-| Complete | Every acceptance criterion executed and passed, with evidence. |
+| Complete | Every acceptance criterion executed and passed, with recorded evidence. |
+| Partial | Some acceptance criteria met and verified; the rest listed explicitly below. |
+| Not started | No implementation exists. |
+| Blocked | A direct dependency is incomplete. |
+
+**Nothing here is marked Complete on the strength of code existing.** Complete means
+the criteria were executed against the running system.
 
 ## Functional Blocks
 
-| Block | Name | Status | Dependencies | Agent | Validation |
-|---|---|---|---|---|---|
-| 00 | Master Orchestrator | Installed | None | Product Architect | Pending execution |
-| 01 | Repository Assessment | Ready | None | Product Architect | Pending |
-| 02 | Product Requirements | Blocked | 01 | Product Architect | Pending |
-| 03 | System Architecture | Blocked | 01, 02 | Product Architect | Pending |
-| 04 | Supabase Foundation | Blocked | 03 | Supabase Architect | Pending |
-| 05 | Database Content Model | Blocked | 04 | Supabase Architect | Pending |
-| 06 | Authentication and Authorization | Blocked | 04, 05 | Supabase Architect | Pending — requires Security Reviewer sign-off |
-| 07 | RLS and Security | Blocked | 05, 06 | Security Reviewer | Pending — independent review mandatory |
-| 08 | Editorial Workflow | Blocked | 05, 06, 07 | Workflow Engineer | Pending |
-| 09 | Administrative Dashboard | Blocked | 06, 07, 08 | CMS Engineer | Pending — requires Accessibility Reviewer sign-off |
-| 10 | Structured Editor | Blocked | 05, 08, 09 | CMS Engineer | Pending — requires Accessibility Reviewer sign-off |
-| 11 | Public Experience | Blocked | 05, 07 | Design Engineer | Pending |
-| 12 | Design System | Blocked | 02, 03 | Design Engineer | Pending — requires Accessibility Reviewer sign-off |
-| 13 | Assets and Downloads | Blocked | 04, 06, 07 | Supabase Architect | Pending — requires Security Reviewer sign-off |
-| 14 | Newsletter Subscriptions | Blocked | 04, 06 | CMS Engineer | Pending |
-| 15 | Search and Retrieval | Blocked | 05, 07 | Search Engineer | Pending — requires Security Reviewer sign-off |
-| 16 | Claims and Provenance | Blocked | 05, 08 | Provenance Engineer | Pending |
-| 17 | Citation and Authority | Blocked | 05, 16 | Citation Reviewer | Pending |
-| 18 | Public Knowledge API | Blocked | 05, 07, 17 | Citation Reviewer | Pending |
-| 19 | Analytics and Observability | Blocked | 03, 04 | Deployment Engineer | Pending |
-| 20 | Accessibility | Blocked | 09, 10, 11, 12 | Accessibility Reviewer | Pending |
-| 21 | SEO and Machine Discovery | Blocked | 11, 17 | Citation Reviewer | Pending |
-| 22 | Testing and Quality | Blocked | Implemented blocks | Test Engineer | Pending |
-| 23 | Deployment and Operations | Blocked | 04, 07, 19, 22 | Deployment Engineer | Pending |
-| 24 | Documentation and Handoff | Blocked | Implemented blocks | Product Architect | Pending |
-| 25 | Final Validation | Blocked | 22, 23, 24 | Product Architect | Pending |
-| 26 | Implementation Checklist | Blocked | 25 | Test Engineer | Pending |
-| 27 | Security Hardening | Blocked | 04, 06, 07, 13, 19 | Security Reviewer | Pending — independent review mandatory |
-| 28 | Google OAuth | Blocked | 04, 06, 07 | Security Reviewer | Pending — independent review mandatory |
+| Block | Name | Status | Evidence |
+|---|---|---|---|
+| 00 | Master Orchestrator | Installed | Contract only; produces no code |
+| 01 | Repository Assessment | Partial | `docs/repository-assessment.md` is the initialization baseline; the formal Block 01 pass and its ADR have not been run |
+| 02 | Product Requirements | Not started | Requirements seeded in traceability; `docs/product-requirements.md` not written |
+| 03 | System Architecture | Partial | Boundaries realised in code (`src/lib/db/client.ts`, `src/lib/env.ts`); `docs/architecture.md` not written |
+| 04 | Supabase Foundation | Partial | 13 schemas, 6 extensions, `audit.events`, slug + updated_at helpers, env validation, three access modes — all applied and tested. Supabase CLI config, Edge Function scaffolding and typed client generation not done |
+| 05 | Database Content Model | **Complete** | 8 `cms` tables + 6 `taxonomy` + 4 bibliographic `identity`; immutability trigger-enforced and proven by 10 tests; derived text generation working |
+| 06 | Authentication and Authorization | Partial | 14 roles, 23 permissions, 59 grants, permission functions, self-elevation blocked, `accounts.profiles` + `external_identities` — all tested. Actual sign-in/session flow not implemented |
+| 07 | RLS and Security | **Complete** | 118 policies across 65 tables; every exposed table has RLS and ≥1 policy; draft isolation, audit protection, subscription-based access all tested. `docs/rls.md` and `docs/threat-model.md` outstanding |
+| 08 | Editorial Workflow | Partial | 8 `workflow` tables, 9 states, 19 transitions, DB-enforced transition guard and separation of duties. The atomic publication transaction is **not** implemented |
+| 09 | Administrative Dashboard | Not started | — |
+| 10 | Structured Editor | Not started | — |
+| 11 | Public Experience | Partial | Homepage renders server-side from live data with empty and degraded states; 18 further surfaces not built |
+| 12 | Design System | Partial | Full token system, dark scheme, focus and reduced-motion handling. Component library not extracted |
+| 13 | Assets and Downloads | Partial | 7 `assets` tables, 5 buckets, policies, append-only download events. Signed URL issuance and upload validation not implemented |
+| 14 | Newsletter Subscriptions | Partial | 7 `subscriptions` tables with hashed tokens, consent evidence, suppression, retry queue. No provider adapter or routes |
+| 15 | Search and Retrieval | Partial | `search.documents` with generated weighted tsvector, chunks, pgvector embeddings, hybrid rank function, boosts/suppressions/zero-result. No query surface or embedding pipeline |
+| 16 | Claims and Provenance | Partial | 9 `knowledge` tables; nine claim types with the five §45 evidence classes as a generated column; per-type constraints; traceability validator. Not yet wired to a publication gate |
+| 17 | Citation and Authority | Not started | — |
+| 18 | Public Knowledge API | Not started | — |
+| 19 | Analytics and Observability | Partial | `analytics.events` append-only with six event families and retention policies. No instrumentation in the app |
+| 20 | Accessibility | Partial | Semantic layout, skip link, focus indicator, reduced motion, dark scheme. **No automated or manual audit has been run** |
+| 21 | SEO and Machine Discovery | Partial | Metadata and canonical base configured. No sitemaps, feeds, JSON-LD, alternates or `llms.txt` |
+| 22 | Testing and Quality | Partial | 42 tests across unit/DB/RLS tiers, all passing. No integration, E2E, accessibility or security-scan tiers; no CI |
+| 23 | Deployment and Operations | Not started | Scripts exist for local only |
+| 24 | Documentation and Handoff | Partial | `assumptions`, `local-development`, this file. 20 further documents outstanding |
+| 25 | Final Validation | Not started | — |
+| 26 | Implementation Checklist | Not started | Contract installed; execution requires Blocks 22–25 |
+| 27 | Security Hardening | Partial | Central security headers and a CSP without `unsafe-inline` for scripts, applied and verified over HTTP. No rate limiting, upload controls or dependency scanning |
+| 28 | Google OAuth | Partial | `accounts.external_identities` with the uniqueness constraint, unwritable through the API, plus startup coherence validation. Flow not implemented |
 
-## Application Implementation State
+## Verified Invariants
 
-No application code exists. The repository contains the architecture pack, repository
-governance files, and the pre-existing `README.md` and `.gitignore`. There is no
-framework installation, no package manifest, no Supabase configuration, no
-migrations, no tests, and no CI/CD.
+These were executed, not asserted. 42 tests, all passing, against a real PostgreSQL 16
+cluster with pgvector 0.6.0.
 
-## Next Eligible Block
+| Invariant | How it is proven |
+|---|---|
+| Published versions are immutable | 10 tests; asserted against the **superuser** connection, so it is an invariant rather than an access control |
+| `audit.events` is append-only | Two independent controls: no UPDATE/DELETE policy, plus table triggers that reject both even for a `BYPASSRLS` role |
+| Drafts are invisible to the public | Denial tests for version, modules, item, and full-table scans; verified again over HTTP against the running server |
+| Self-elevation is impossible | Including for `user_administrator`, who cannot assign a role to themselves |
+| External identities are API-unwritable | No INSERT/UPDATE/DELETE policy exists; absence is the control |
+| Search respects permissions | Two layers: drafts cannot be indexed at all, and withdrawal removes a document from anonymous **counts**, not just pages |
+| Every exposed table has RLS and a policy | Enumeration meta-test over all 11 schemas |
+| Every SECURITY DEFINER function pins `search_path` | Meta-test over `pg_proc` |
+| Every workflow transition is performable | Meta-test; guards the permission drift that migration 1400 fixed |
 
-Block 01: Repository Assessment
+## Defects Found and Fixed During Implementation
+
+Recorded because each was a real hole that testing caught, not a hypothetical.
+
+1. **`audit.events` had no RLS enabled.** Created in the foundation migration without
+   `ENABLE ROW LEVEL SECURITY`, leaving its policies inert and the audit log
+   world-readable. Caught by the enumeration meta-test.
+2. **`service_role` had no table grants.** `BYPASSRLS` exempts a role from policies but
+   not from grants, so every privileged server-layer operation would have failed with
+   "permission denied" despite the role being nominally privileged. Caught by a search
+   leakage test.
+3. **Three orphan permissions deadlocked the workflow.** `content.edit`,
+   `content.schedule` and `content.submit_for_review` were required by transitions but
+   held by no role, making those transitions permanently unperformable — silently.
+   Fixed in migration 1400, with a meta-test to prevent recurrence.
+
+## Next Steps, in Dependency Order
+
+1. **Block 08** — the atomic publication transaction. Everything downstream depends on
+   publication being a single all-or-nothing operation.
+2. **Block 06** — the actual authentication flow against the role model that exists.
+3. **Block 09/10** — the administrative surface and structured editor.
+4. **Block 11** — the remaining public surfaces, especially the report reading path.
+5. **Block 22/20** — integration, E2E and accessibility tiers, and CI.
