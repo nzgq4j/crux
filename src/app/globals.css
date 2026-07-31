@@ -1,0 +1,172 @@
+@import 'tailwindcss';
+
+/**
+ * Crux design tokens (Block 12).
+ *
+ * An original institutional-research identity: warm paper ground, near-black ink,
+ * a single deep-teal accent, and a serif display face against a neutral text face.
+ * Deliberately not IBM's blue-on-white grid nor McKinsey's palette or trade dress.
+ *
+ * Every colour pairing used for text has a measured contrast ratio recorded in
+ * docs/design-system.md. No component hard-codes a colour, space or type value.
+ */
+
+@theme {
+  /* --- Colour: light --------------------------------------------------- */
+  --color-ground: #faf8f4;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #f2eee7;
+  --color-ink: #16181a;
+  --color-ink-muted: #55595e;
+  --color-ink-faint: #757a80;
+  --color-rule: #ddd7cc;
+  --color-rule-strong: #b8b1a4;
+
+  --color-accent: #0f5c5c;
+  --color-accent-hover: #0b4747;
+  --color-accent-ground: #e4efed;
+
+  --color-success: #1c6340;
+  --color-warning: #7a4c07;
+  --color-danger: #97241f;
+  --color-info: #1a4f7a;
+
+  /* Data visualisation: distinguishable without colour alone; each series is
+     paired with a distinct dash/marker in the chart components. */
+  --color-viz-1: #0f5c5c;
+  --color-viz-2: #9a5518;
+  --color-viz-3: #3c4f8a;
+  --color-viz-4: #6b3560;
+  --color-viz-5: #476622;
+  --color-viz-6: #8a2f3c;
+
+  /* --- Typography ------------------------------------------------------ */
+  --font-display: ui-serif, Georgia, 'Times New Roman', serif;
+  --font-body: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --text-display: 3.25rem;
+  --text-display--line-height: 1.06;
+  --text-display--letter-spacing: -0.022em;
+  --text-h1: 2.4rem;
+  --text-h1--line-height: 1.12;
+  --text-h1--letter-spacing: -0.018em;
+  --text-h2: 1.75rem;
+  --text-h2--line-height: 1.2;
+  --text-h3: 1.3rem;
+  --text-h3--line-height: 1.3;
+  --text-lede: 1.2rem;
+  --text-lede--line-height: 1.55;
+  --text-body: 1.0625rem;
+  --text-body--line-height: 1.7;
+  --text-caption: 0.875rem;
+  --text-caption--line-height: 1.5;
+  --text-label: 0.75rem;
+  --text-label--line-height: 1.4;
+  --text-label--letter-spacing: 0.07em;
+
+  /* --- Spacing, measure, radius, elevation ----------------------------- */
+  --spacing: 0.25rem;
+  --container-reading: 40rem;
+  --container-wide: 75rem;
+  --container-exhibit: 56rem;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+
+  --shadow-raised: 0 1px 2px rgb(22 24 26 / 0.06), 0 2px 8px rgb(22 24 26 / 0.05);
+  --shadow-overlay: 0 8px 32px rgb(22 24 26 / 0.16);
+
+  --ease-standard: cubic-bezier(0.2, 0, 0.13, 1);
+}
+
+/* --- Dark scheme: a token switch, not a duplicated component tree ------ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-ground: #121314;
+    --color-surface: #191b1d;
+    --color-surface-sunken: #0d0e0f;
+    --color-ink: #ece9e4;
+    --color-ink-muted: #a7a9ad;
+    --color-ink-faint: #85888c;
+    --color-rule: #32363a;
+    --color-rule-strong: #4b5157;
+    --color-accent: #6fc0bb;
+    --color-accent-hover: #8fd3ce;
+    --color-accent-ground: #14312f;
+    --color-success: #6cc296;
+    --color-warning: #d9a441;
+    --color-danger: #e88a83;
+    --color-info: #7db4dd;
+  }
+}
+
+:root[data-theme='dark'] {
+  --color-ground: #121314;
+  --color-surface: #191b1d;
+  --color-surface-sunken: #0d0e0f;
+  --color-ink: #ece9e4;
+  --color-ink-muted: #a7a9ad;
+  --color-ink-faint: #85888c;
+  --color-rule: #32363a;
+  --color-rule-strong: #4b5157;
+  --color-accent: #6fc0bb;
+  --color-accent-hover: #8fd3ce;
+  --color-accent-ground: #14312f;
+}
+
+:root[data-theme='light'] {
+  --color-ground: #faf8f4;
+  --color-surface: #ffffff;
+  --color-ink: #16181a;
+  --color-accent: #0f5c5c;
+}
+
+/* --- Base ------------------------------------------------------------- */
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-ground);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: 1.7;
+  text-rendering: optimizeLegibility;
+}
+
+/* A single, highly visible focus indicator applied consistently. Never removed
+   without an equivalent replacement (rules/accessibility.md 8-9). */
+:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Skip link: visible on focus, never a permanent visual artefact. */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 0.75rem 1.25rem;
+  background: var(--color-accent);
+  color: #fff;
+  font-weight: 600;
+}
+.skip-link:focus {
+  left: 0.5rem;
+  top: 0.5rem;
+}
