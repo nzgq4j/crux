@@ -27,6 +27,7 @@ SERVER_ONLY=(
   EMAIL_API_KEY
   NEWSLETTER_API_KEY
   EMBEDDING_API_KEY
+  AUTH_RATE_LIMIT_SALT
 )
 
 echo "==> scanning $BUNDLE_DIR for server-only identifiers"

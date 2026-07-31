@@ -1,0 +1,518 @@
+{
+  "_readme": [
+    "Ingestion plan for 'Sensor Fusion and the Common Operating Picture' (C-UAS White",
+    "Paper Series, Paper 9 of 10, Intelligence Architecture pillar, April 2026).",
+    "",
+    "Everything in this file that is not lifted verbatim from the document is an",
+    "editorial judgement, and each one is labelled. Nothing is invented: where the",
+    "document is silent the field is null and the ingestion summary reports it as",
+    "absent (rules/content-modeling.md 25).",
+    "",
+    "  1. `subtitle` occupies `standfirst`, which is semantically a lede. S1 adds the",
+    "     real column.",
+    "  2. `marking` becomes a labelled callout module at position 0. S2 adds the real",
+    "     field and the furniture rendering.",
+    "",
+    "LIMITATIONS are an editorial extraction, not authorship: every sentence restates",
+    "a limit the paper states about itself, and the text says so. It requires author",
+    "sign-off at review before this is published for real."
+  ],
+  "contentType": "white_paper",
+  "slug": "sensor-fusion-and-the-common-operating-picture",
+  "title": "Sensor Fusion and the Common Operating Picture",
+  "subtitle": "The Intelligence Architecture Required for Effective C-UAS Integration Across Echelons",
+  "executiveSummary": "The C-UAS problem is not primarily a hardware problem. The United States military has invested in handheld jammers, radars, kinetic interceptors, directed energy systems and sensor towers; each works, and none of them, operating alone on a bespoke proprietary network, delivers the detect-identify-track-defeat kill chain the drone threat requires. The structural failure mode is architectural. This paper assesses the transport, fusion and track-management functions that turn discrete detection events into cross-domain kill chains, draws on Ukraine's GIS Arta and Kropyva as a model of architecture-driven speed, evaluates the CJADC2 framework gaps GAO documents, and proposes a five-layer intelligence architecture spanning the tactical through strategic levels.",
+  "_methodology_note": "Mapped from the document's own ASSESSMENT SCOPE block and its sources statement, both verbatim (docs/corpus/02 §2.5, option 1). This is a description of how the work was carried out, not new writing.",
+  "methodology": "Assessment scope, as stated by the paper: \"This paper assesses the intelligence architecture required for effective C-UAS integration across echelons: the sensor modalities, data transport, fusion, track management, and common C2 frameworks that transform discrete detection events into actionable, cross-domain kill chains. It examines the structural failure mode of bespoke, siloed sensor networks; draws on Ukraine's GIS Arta and Kropyva software as a model of architecture-driven speed; evaluates the GAO-documented CJADC2 framework gaps that limit joint C-UAS data sharing; and analyzes JIATF 401's ongoing effort to build a common C2 network. The paper proposes a layered intelligence architecture spanning the tactical through strategic levels.\"\n\nSource basis, as stated by the paper: \"This paper draws exclusively on publicly available and officially released sources. No classified information is referenced.\" The paper's Principal Sources block enumerates twenty-five sources and states, for each, what it is relied on to establish.",
+  "_limitations_note": "EDITORIAL EXTRACTION. Every clause restates a limit the paper states about itself; the framing sentence makes the provenance explicit. Requires author sign-off before real publication.",
+  "limitations": "The paper states the following limits on its own analysis. Its evidence base is restricted to publicly available and officially released sources, so it can describe neither classified programme detail nor the classified data-sharing arrangements whose absence it identifies as a barrier. Its assessment of the remaining gap rests on GAO-25-106454, which found that no entity within the Department of Defense is working on solutions to the data-classification hindrance to CJADC2 data sharing and that CJADC2 leadership considered the challenge beyond their purview; the paper does not establish what has changed since April 2025. It records that the December 2025 installation defence policy is a partial remedy which \"does not resolve the cross-service, cross-echelon classification fragmentation that prevents tactical C-UAS sensor data from contributing to the operational-level common operating picture\". The Ukrainian systems it draws on as a model operate under different authority, classification and procurement conditions from the U.S. joint force, and the paper offers them as architectural principles rather than as transferable programmes. The five-layer architecture it proposes is a proposal, not an evaluated design: no implementation of it is assessed, and no cost, schedule or force-structure analysis is offered.",
+  "_terms_note": "Terms that exist in the seeded taxonomy today. pillar, series and the C-UAS topic hierarchy are Band 3 work (docs/corpus/03), so they are absent rather than approximated.",
+  "terms": [
+    "aerospace-defence",
+    "government-public"
+  ],
+  "_tableCaptions_note": "Authored at ingestion: no table in the corpus has a caption (F13), and the table module requires one (T3). Keyed by the table's ordinal in the document.",
+  "tableCaptions": {
+    "1": "Five architecture layers, their current capability, the primary gap in each, and the programme or authority that owns it.",
+    "2": "Five priority actions for the C-UAS intelligence architecture, with timeline, lead organisation and the authority or resource each requires."
+  },
+  "_sources_note": "The twenty-five entries of the paper's Principal Sources block, verbatim in title and in the `establishes` annotation the paper itself supplies (F18). Publication dates are recorded where the entry states one. No URL is recorded because the block states none, and no access date is invented (T2).",
+  "sources": [
+    {
+      "key": "mwi",
+      "title": "Frontline Fusion: The Network Architecture Needed to Counter Drones",
+      "publisher": "Modern War Institute at West Point",
+      "date": "2025-07-23",
+      "type": "report",
+      "credibility": "reliable",
+      "establishes": "transport, fusion, track management; bespoke network failure mode"
+    },
+    {
+      "key": "gao",
+      "title": "Defense Command and Control: Further Progress Hinges on Establishing a Comprehensive Framework",
+      "publisher": "GAO",
+      "date": "2025-04-01",
+      "type": "report",
+      "credibility": "authoritative",
+      "establishes": "services in isolation; data classification barrier; no entity addressing critical challenges"
+    },
+    {
+      "key": "cepa",
+      "title": "An Urgent Matter of Drones: Lessons for NATO from Ukraine",
+      "publisher": "CEPA",
+      "date": "2025-04-01",
+      "type": "report",
+      "credibility": "reliable",
+      "establishes": "GIS Arta / Kropyva sensor-to-shooter timeline compression; distributed C4ISR architecture; Turkey drone-augmented battle networks"
+    },
+    {
+      "key": "jiatf-memo",
+      "title": "JIATF 401 Establishment Memorandum",
+      "publisher": "Office of the Secretary of War",
+      "date": "2025-08-28",
+      "type": "legislation",
+      "credibility": "authoritative",
+      "establishes": "$50M/effort acquisition authority; sunset review; JCO disestablishment"
+    },
+    {
+      "key": "ncrcc",
+      "title": "JIATF-401 Visits NCRCC, Emphasizes Data Sharing, Interagency Unity to Protect US Airspace",
+      "publisher": "Army.mil",
+      "date": "2025-12-08",
+      "type": "press_release",
+      "credibility": "authoritative",
+      "establishes": "Brig. Gen. Ross; community of action; sensor/intelligence/aviation data fusion"
+    },
+    {
+      "key": "ds-common-network",
+      "title": "The Pentagon Wants a Common Network for Its Counter-Drone Systems",
+      "publisher": "DefenseScoop",
+      "date": "2025-12-19",
+      "type": "news_article",
+      "credibility": "reliable",
+      "establishes": "Brig. Gen. Ross; 90-day common C2 framework commitment; installation data sharing; World Cup preparation"
+    },
+    {
+      "key": "diu-challenge",
+      "title": "Winners Announced for C-UAS Low-Cost Sensing Challenge",
+      "publisher": "DIU / JIATF 401 / USNORTHCOM",
+      "date": "2025-12-12",
+      "type": "press_release",
+      "credibility": "authoritative",
+      "establishes": "MatrixSpace, Guardian RF, Hidden Level, Teledyne FLIR; 115 submissions; Falcon Peak 25.2"
+    },
+    {
+      "key": "ds-authorities",
+      "title": "Pentagon Broadens Counter-Drone Authorities",
+      "publisher": "DefenseScoop",
+      "date": "2026-01-01",
+      "type": "news_article",
+      "credibility": "reliable",
+      "establishes": "Hegseth Dec 2025 installation defense policy; interagency data sharing authorized; expanded defensive area"
+    },
+    {
+      "key": "marketplace",
+      "title": "JIATF 401 Counter-UAS Marketplace Reaches IOC",
+      "publisher": "ExecutiveGov",
+      "date": "2026-02-25",
+      "type": "news_article",
+      "credibility": "mixed",
+      "credibilityNotes": "trade press summary of a programme announcement",
+      "establishes": "JIATF 401 online marketplace; common hardware systems electronic catalog; IDIQ contract vehicle"
+    },
+    {
+      "key": "golden-dome",
+      "title": "Pentagon Counter-Drone Task Force Plans Golden Dome Link",
+      "publisher": "DefenseNews",
+      "date": "2025-12-22",
+      "type": "news_article",
+      "credibility": "reliable",
+      "establishes": "Group 3 data sharing; multilayered defense; sensor-effector-C2 interoperable network"
+    },
+    {
+      "key": "sdn",
+      "title": "Software-Defined Networking Provides Configurable C2 for Army's Next Generation Data Needs",
+      "publisher": "Army.mil",
+      "date": "2025-07-28",
+      "type": "press_release",
+      "credibility": "authoritative",
+      "establishes": "NGC2; SDN; stovepipe data architecture failure"
+    },
+    {
+      "key": "adaptive-c2",
+      "title": "Adaptive C2: Modernizing Army Command and Control",
+      "publisher": "Army.mil",
+      "date": "2025-06-10",
+      "type": "press_release",
+      "credibility": "authoritative",
+      "establishes": "C2 Fix; NGC2; Operation Lethal Eagle COP challenges; MMC-S / ATAK; software version discrepancies"
+    },
+    {
+      "key": "ifri",
+      "title": "Mapping the MilTech War: Eight Lessons from Ukraine's Battlefield",
+      "publisher": "IFRI",
+      "date": "2026-02-12",
+      "type": "report",
+      "credibility": "reliable",
+      "establishes": "Kropyva, Delta, GIS Arta; federated modular combat management ecosystem; open adaptable architecture"
+    },
+    {
+      "key": "mes-gpu",
+      "title": "Sensor Fusion at the Tactical Edge: Why GPUs Are Essential for Modern C5ISR Systems",
+      "publisher": "Military Embedded Systems",
+      "date": "2025-09-05",
+      "type": "news_article",
+      "credibility": "mixed",
+      "credibilityNotes": "trade publication with vendor-adjacent editorial interest",
+      "establishes": "GPU-based edge AI; SOSA standard; visual/radar/RF real-time fusion"
+    },
+    {
+      "key": "systel",
+      "title": "Turning Sensor Chaos into Decision Dominance",
+      "publisher": "Systel Rugged Computing",
+      "date": "2025-06-01",
+      "type": "web_page",
+      "credibility": "mixed",
+      "credibilityNotes": "vendor publication; the 70 percent classification-speed figure is the vendor's own and is not independently verified in the paper",
+      "establishes": "passive RF + EO fusion; 70% faster classification; GPS-denied target custody; JADC2 Project Convergence limits"
+    },
+    {
+      "key": "next-move",
+      "title": "Sensor Fusion Powers Next-Gen Defense Integration 2026",
+      "publisher": "Next Move Strategy Consulting",
+      "date": "2026-01-01",
+      "type": "report",
+      "credibility": "mixed",
+      "credibilityNotes": "commercial market-research publication",
+      "establishes": "Ringleader exercises; DAF Battle Network; $1B GMTI FY2026; Gen. Saltzman / Gen. Guetlein statements"
+    },
+    {
+      "key": "new-america",
+      "title": "How Ukraine's Uber for Artillery Is Leading the Software War Against Russia",
+      "publisher": "New America / Future Frontlines",
+      "date": "2023-01-01",
+      "type": "report",
+      "credibility": "reliable",
+      "establishes": "GIS Arta; 30-45 second kill chain; open-source sensor fusion; Starlink/Android"
+    },
+    {
+      "key": "acig",
+      "title": "Military Situation Awareness: Ukrainian Experience",
+      "publisher": "ACIG Journal",
+      "date": "2024-01-01",
+      "type": "journal_article",
+      "credibility": "reliable",
+      "establishes": "Kropyva; 90-95% artilleryman adoption; 5x faster battery deployment; federated data model"
+    },
+    {
+      "key": "wavell",
+      "title": "AI on the Battlefield: Lessons from Ukraine",
+      "publisher": "Wavell Room",
+      "date": "2023-01-01",
+      "type": "web_page",
+      "credibility": "mixed",
+      "credibilityNotes": "professional commentary outlet, not peer reviewed",
+      "establishes": "Kropyva sensor-effector integration; targeting cycle acceleration; software as integration layer"
+    },
+    {
+      "key": "crs",
+      "title": "Department of Defense Counter-UAS: Background and Issues for Congress",
+      "publisher": "Congressional Research Service",
+      "date": "2025-03-01",
+      "type": "report",
+      "credibility": "authoritative",
+      "establishes": "C-UAS programme background and congressional issues"
+    },
+    {
+      "key": "call",
+      "title": "Counter-Unmanned Aerial Systems Training and Implementation at the National Training Center",
+      "publisher": "Center for Army Lessons Learned",
+      "date": "2025-09-02",
+      "type": "report",
+      "credibility": "authoritative",
+      "establishes": "NTC C-UAS training and implementation observations"
+    },
+    {
+      "key": "dodig",
+      "title": "Installation C-UAS Policy Report",
+      "publisher": "DoD Office of Inspector General",
+      "date": "2026-01-01",
+      "type": "report",
+      "credibility": "authoritative",
+      "establishes": "large percentage of installations without operational approval; varying policy interpretations"
+    },
+    {
+      "key": "ausa",
+      "title": "Achieving Decision Dominance Through Convergence: The U.S. Army and JADC2",
+      "publisher": "AUSA",
+      "type": "report",
+      "credibility": "reliable",
+      "establishes": "Project Convergence; joint kill web; JSIL; LEO transport layer"
+    },
+    {
+      "key": "bd-gateway",
+      "title": "DoD Authorizes First C2 Gateway to Modernize for CJADC2",
+      "publisher": "Breaking Defense",
+      "date": "2024-01-01",
+      "type": "news_article",
+      "credibility": "reliable",
+      "establishes": "ADSI cATO; CoT/JREAP-C/Link 16; CWIX 2024 coalition interoperability"
+    },
+    {
+      "key": "booz",
+      "title": "Solving the Hidden Challenges of JADC2",
+      "publisher": "Booz Allen Hamilton",
+      "type": "report",
+      "credibility": "mixed",
+      "credibilityNotes": "consultancy publication with a commercial interest in the subject",
+      "establishes": "data stewardship vs. data ownership; proprietary OEM lock-in; JADC2 enterprise-level management requirement"
+    }
+  ],
+  "_claims_note": [
+    "Claims are assertions the paper makes, classified per docs/corpus/02 T1: a figure",
+    "the paper reports from a third party is an observed_fact about what that source",
+    "found, NOT a quantitative_finding — Crucible Insight did not compute it, and",
+    "there is no analysis run to point at. Each links to the source the paper's own",
+    "Principal Sources annotation names as establishing it.",
+    "",
+    "Confidence follows the paper's own hedging (docs/corpus/06 §6.7). The vendor",
+    "figure is marked low with a rationale."
+  ],
+  "claims": [
+    {
+      "type": "observed_fact",
+      "assertion": "GAO found that the military services are pursuing CJADC2 projects largely in isolation and without clear goals, that overly restrictive data classification is a significant hindrance to sharing command and control data, and that no entity within DoD is working on solutions to several of these cross-organizational challenges.",
+      "confidence": "high",
+      "confidenceRationale": "A published GAO audit finding, quoted directly by the paper.",
+      "sources": [
+        {
+          "source": "gao",
+          "relationship": "supports",
+          "location": "GAO-25-106454",
+          "locationType": "section"
+        }
+      ],
+      "key": "gao-isolation"
+    },
+    {
+      "type": "observed_fact",
+      "assertion": "Ukraine's GIS Arta and Kropyva software compressed sensor-to-shooter timelines from approximately 20 minutes using Soviet-era processes to as little as 30 to 45 seconds.",
+      "confidence": "medium",
+      "confidenceRationale": "Reported consistently by two independent analyses; the paper does not state a measurement method.",
+      "valueLower": 30,
+      "valueUpper": 45,
+      "unit": "seconds",
+      "periodLabel": "reported 2023-2025",
+      "sources": [
+        {
+          "source": "new-america",
+          "relationship": "supports",
+          "location": "GIS Arta 30-45 second kill chain",
+          "locationType": "section"
+        },
+        {
+          "source": "cepa",
+          "relationship": "supports",
+          "location": "sensor-to-shooter timeline compression",
+          "locationType": "section"
+        }
+      ],
+      "key": "ukraine-timeline"
+    },
+    {
+      "type": "observed_fact",
+      "assertion": "JIATF 401 was established in August 2025 with a $50 million per-effort acquisition approval authority, a sunset review, and the disestablishment of the Joint C-UAS Office.",
+      "confidence": "high",
+      "confidenceRationale": "Stated in the establishment memorandum itself.",
+      "sources": [
+        {
+          "source": "jiatf-memo",
+          "relationship": "supports",
+          "location": "establishment memorandum",
+          "locationType": "section"
+        }
+      ],
+      "key": "jiatf-established"
+    },
+    {
+      "type": "observed_fact",
+      "assertion": "The December 2025 installation defence policy explicitly authorised UAS sensor data sharing between military installations and other federal agencies.",
+      "confidence": "high",
+      "confidenceRationale": "A policy action reported by two outlets and consistent with the JIATF 401 data-sharing emphasis.",
+      "sources": [
+        {
+          "source": "ds-authorities",
+          "relationship": "supports",
+          "location": "interagency data sharing authorized",
+          "locationType": "section"
+        },
+        {
+          "source": "ncrcc",
+          "relationship": "provides_context",
+          "location": "data sharing emphasis",
+          "locationType": "section",
+          "note": "Corroborating context rather than the policy text itself."
+        }
+      ],
+      "key": "dec-policy-data-sharing"
+    },
+    {
+      "type": "observed_fact",
+      "assertion": "The DoD Inspector General reported in January 2026 that a large percentage of installations lack operational approval for C-UAS and that policy interpretations vary between them.",
+      "confidence": "high",
+      "confidenceRationale": "An Inspector General finding.",
+      "sources": [
+        {
+          "source": "dodig",
+          "relationship": "supports",
+          "location": "installation C-UAS policy report",
+          "locationType": "section"
+        }
+      ],
+      "key": "dodig-installations"
+    },
+    {
+      "type": "observed_fact",
+      "assertion": "Multi-modal sensor fusion is reported to enable drone classification approximately 70 percent faster than single-sensor systems.",
+      "confidence": "low",
+      "confidenceRationale": "The figure originates with a vendor publication and is not independently verified in this paper. Recorded because the paper relies on it, and marked low so the reliance is visible.",
+      "value": 70,
+      "unit": "percent",
+      "sources": [
+        {
+          "source": "systel",
+          "relationship": "supports",
+          "location": "70% faster classification",
+          "locationType": "section",
+          "note": "Vendor-published figure; no method stated."
+        }
+      ],
+      "key": "fusion-70pct"
+    },
+    {
+      "type": "observed_fact",
+      "assertion": "Kropyva reached 90 to 95 percent adoption among Ukrainian artillerymen and is associated with approximately fivefold faster battery deployment.",
+      "confidence": "medium",
+      "confidenceRationale": "A single journal analysis; the paper does not corroborate the adoption figure elsewhere.",
+      "valueLower": 90,
+      "valueUpper": 95,
+      "unit": "percent",
+      "sources": [
+        {
+          "source": "acig",
+          "relationship": "supports",
+          "location": "Kropyva adoption",
+          "locationType": "section"
+        }
+      ],
+      "key": "kropyva-adoption"
+    },
+    {
+      "type": "observed_fact",
+      "assertion": "The Department of the Air Force's Ringleader exercise series is integrating air, ground and space-based sensors into a unified operational framework, with a $1 billion Ground Moving Target Indicator line in FY2026.",
+      "confidence": "medium",
+      "confidenceRationale": "Reported by a commercial market-research publication; the underlying budget line is a matter of public record but is not cited directly.",
+      "value": 1000000000,
+      "unit": "United States dollars",
+      "periodLabel": "FY2026",
+      "sources": [
+        {
+          "source": "next-move",
+          "relationship": "supports",
+          "location": "$1B GMTI FY2026",
+          "locationType": "section"
+        }
+      ],
+      "key": "ringleader-gmti"
+    },
+    {
+      "type": "definition",
+      "assertion": "The three foundational functions of a C-UAS intelligence architecture are transport (network connectivity linking sensors and effectors across echelons without bespoke proprietary enclaves), fusion (correlating multi-modal sensor streams into unified deduplicated track files), and track management (assigning, deconflicting and maintaining track identity across the enterprise through the kill chain).",
+      "confidence": "high",
+      "confidenceRationale": "The paper's own framing, derived from the Modern War Institute analysis it cites.",
+      "sources": [
+        {
+          "source": "mwi",
+          "relationship": "supports",
+          "location": "transport, fusion, track management",
+          "locationType": "section"
+        }
+      ],
+      "key": "three-functions"
+    },
+    {
+      "type": "interpretation",
+      "assertion": "The structural failure mode of U.S. counter-UAS is architectural rather than material: the hardware works, and it is the absence of a common network and command-and-control framework that prevents it from delivering a complete kill chain.",
+      "confidence": "medium",
+      "confidenceRationale": "The paper's central reading of the GAO, MWI and Inspector General findings taken together.",
+      "sources": [
+        {
+          "source": "mwi",
+          "relationship": "supports",
+          "location": "bespoke network failure mode",
+          "locationType": "section"
+        },
+        {
+          "source": "gao",
+          "relationship": "supports",
+          "location": "services in isolation",
+          "locationType": "section"
+        }
+      ],
+      "key": "architectural-failure",
+      "basis": "gao-isolation"
+    },
+    {
+      "type": "interpretation",
+      "assertion": "The December 2025 installation defence policy is a partial remedy that does not resolve the cross-service, cross-echelon classification fragmentation preventing tactical C-UAS sensor data from contributing to the operational-level common operating picture.",
+      "confidence": "medium",
+      "confidenceRationale": "The paper's assessment of the policy's scope against the gap GAO documented.",
+      "sources": [
+        {
+          "source": "ds-authorities",
+          "relationship": "partially_supports",
+          "location": "expanded defensive area",
+          "locationType": "section",
+          "note": "The source establishes what the policy authorises; the judgement that it is partial is the paper's own."
+        },
+        {
+          "source": "gao",
+          "relationship": "supports",
+          "location": "data classification barrier",
+          "locationType": "section"
+        }
+      ],
+      "key": "partial-remedy",
+      "basis": "dec-policy-data-sharing"
+    },
+    {
+      "type": "recommendation",
+      "assertion": "JIATF 401 should mandate SOSA-compliant open interfaces for all C-UAS sensors it funds, so that proprietary architecture lock-in is prevented at the point of procurement rather than remediated afterwards.",
+      "confidence": "medium",
+      "confidenceRationale": "Follows from the proprietary lock-in finding; the paper does not model the acquisition cost of the mandate.",
+      "sources": [
+        {
+          "source": "booz",
+          "relationship": "supports",
+          "location": "proprietary OEM lock-in",
+          "locationType": "section"
+        },
+        {
+          "source": "mes-gpu",
+          "relationship": "provides_context",
+          "location": "SOSA standard",
+          "locationType": "section"
+        }
+      ],
+      "key": "sosa-mandate",
+      "basis": "architectural-failure"
+    }
+  ],
+  "_claims_basis_note": "claims_interpretation_requires_basis and claims_recommendation_requires_basis make the claim graph ordered: every interpretation names the finding it reads and every recommendation the finding it rests on. The ingester topologically orders on `basis` before inserting. Both constraints refused the first run, which is how the ordering was discovered.",
+  "markingKey": "unclassified_fouo",
+  "statedDate": "2026-04-01",
+  "statedDatePrecision": "month",
+  "contributorOrganisationSlug": "crucible-insight",
+  "affiliation": "Crucible Insight",
+  "_batch_a_note": "Both temporary compromises are gone. The subtitle is in cms.content_versions.subtitle (S1); the marking is a controlled key (S2); the document's April 2026 date is stored at month precision (S3); and authorship is credited to the organisation, which is what the document does, rather than to an invented person (S4)."
+}

@@ -150,6 +150,11 @@ export function getBySlug(slug: string, ctx?: RequestContext): Promise<ContentDe
            i.withdrawal_reason,
            i.withdrawn_at,
            v.id  AS version_id,
+           v.subtitle,
+           v.stated_date,
+           v.stated_date_precision,
+           dm.label   AS distribution_marking,
+           dm.repeats_in_furniture AS distribution_marking_repeats,
            v.executive_summary,
            v.methodology,
            v.limitations,
@@ -158,6 +163,7 @@ export function getBySlug(slug: string, ctx?: RequestContext): Promise<ContentDe
            v.correction_scope
       FROM cms.content_items i
       JOIN cms.content_versions v ON v.id = i.current_version_id
+      LEFT JOIN cms.distribution_markings dm ON dm.key = v.distribution_marking_key
      WHERE i.canonical_slug = $1
      LIMIT 1`
   return ctx
