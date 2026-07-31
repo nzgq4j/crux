@@ -53,9 +53,11 @@ const config = [
   },
 
   {
-    // The env module is the one place that may read process.env — it is the
-    // validator everything else goes through.
-    files: ['src/lib/env.ts', '*.config.{ts,mjs,js}', 'scripts/**'],
+    // The env modules are the one place that may read process.env — they are the
+    // validators everything else goes through. Scoped to that directory rather than
+    // a single file since the module was split into public, server and mode
+    // (Workstream 2); the exemption is unchanged in kind.
+    files: ['src/lib/env/**/*.ts', '*.config.{ts,mjs,js}', 'scripts/**'],
     rules: { 'no-restricted-globals': 'off' },
   },
 

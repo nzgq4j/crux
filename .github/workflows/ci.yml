@@ -33,6 +33,10 @@ jobs:
   static:
     name: Lint, types, build
     runs-on: ubuntu-latest
+    # Stated per job rather than inherited, so a later change to the workflow-level
+    # default cannot silently widen this one.
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v5
 
@@ -44,17 +48,35 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
+      # `npm ci` already refuses a lockfile that cannot satisfy package.json. This
+      # catches the other direction: a lockfile that resolves differently from a fresh
+      # resolve, which is how the eslint version drift reached main.
+      - name: Lockfile consistency
+        run: |
+          npm install --package-lock-only --no-audit --no-fund
+          git diff --exit-code package-lock.json
+
       - name: Type check
         run: npm run typecheck
 
       - name: Lint
         run: npm run lint
 
+      # Tests that need no database. The database job runs the full suite; without
+      # this step these would not run until after a PostgreSQL service had started.
+      - name: Unit tests
+        run: npm run test:unit
+
       - name: Production build
         run: npm run build
         env:
           # The build must not require a database. If a page cannot render without
           # one it must degrade, not fail — so we deliberately point at nothing.
+          #
+          # CRUX_ENV is explicit because next build sets NODE_ENV=production, and an
+          # unset CRUX_ENV now resolves to production and rejects a loopback
+          # DATABASE_URL. This is a build check, not a deployment.
+          CRUX_ENV: test
           DATABASE_URL: postgresql://unused@127.0.0.1:1/unused
           NEXT_PUBLIC_SITE_URL: https://example.invalid
 
@@ -65,6 +87,8 @@ jobs:
   database:
     name: Migrations, RLS and denied-access tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     services:
       postgres:
@@ -135,6 +159,8 @@ jobs:
   security:
     name: Secret and dependency scanning
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v5
         with:
@@ -165,6 +191,9 @@ jobs:
           npm run build
           bash scripts/scan-bundle.sh
         env:
+          # As in the static job: next build sets NODE_ENV=production, and an unset
+          # CRUX_ENV now resolves to production and rejects a loopback DATABASE_URL.
+          CRUX_ENV: test
           DATABASE_URL: postgresql://unused@127.0.0.1:1/unused
           NEXT_PUBLIC_SITE_URL: https://example.invalid
 
@@ -175,6 +204,8 @@ jobs:
   conformance:
     name: Architecture conformance
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v5
       # The SQL interpolation check parses with the TypeScript compiler rather than

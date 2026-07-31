@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { publicEnv } from '@/lib/env'
+import { publicEnv } from '@/lib/env/public'
 import './globals.css'
 
 export const metadata: Metadata = {

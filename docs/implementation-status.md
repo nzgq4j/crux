@@ -4,9 +4,9 @@
 
 - Repository: nzgq4j/crux
 - Default branch: main
-- Working branch: claude/initialize-crux-repository-w49p3o
+- Working branch: main (PRs #2 and #3 merged; foundation remediation in progress)
 - Architecture version: 1.1.0 (Section 45 reconciled)
-- Last updated: 2026-07-31
+- Last updated: 2026-07-31 (foundation remediation pass)
 
 ## Status Vocabulary
 
@@ -27,15 +27,15 @@ the criteria were executed against the running system.
 | 00 | Master Orchestrator | Installed | Contract only; produces no code |
 | 01 | Repository Assessment | Partial | `docs/repository-assessment.md` is the initialization baseline; the formal Block 01 pass and its ADR have not been run |
 | 02 | Product Requirements | Not started | Requirements seeded in traceability; `docs/product-requirements.md` not written |
-| 03 | System Architecture | Partial | Boundaries realised in code (`src/lib/db/client.ts`, `src/lib/env.ts`); `docs/architecture.md` not written |
-| 04 | Supabase Foundation | Partial | 13 schemas, 6 extensions, `audit.events`, slug + updated_at helpers, env validation, three access modes — all applied and tested. Supabase CLI config, Edge Function scaffolding and typed client generation not done |
+| 03 | System Architecture | Partial | Boundaries realised in code (`src/lib/db/client.ts`, `src/lib/env/{public,server,mode}.ts`); `docs/architecture.md` not written |
+| 04 | Supabase Foundation | Partial | 13 schemas, 6 extensions, `audit.events`, slug + updated_at helpers, env validation, three access modes — all applied and tested. Environment split into public/server/mode with a `server-only` boundary and validated `DATABASE_URL` (remediation Workstreams 1-2). Supabase CLI config, Edge Function scaffolding and typed client generation not done |
 | 05 | Database Content Model | **Complete** | 8 `cms` tables + 6 `taxonomy` + 4 bibliographic `identity`; immutability trigger-enforced and proven by 10 tests; derived text generation working |
-| 06 | Authentication and Authorization | Partial | 14 roles, 23 permissions, 59 grants, permission functions, self-elevation blocked, `accounts.profiles` + `external_identities` — all tested. Actual sign-in/session flow not implemented |
+| 06 | Authentication and Authorization | Partial | 14 roles, 26 permissions, 59 grants, permission functions, self-elevation blocked, `accounts.profiles` + `external_identities` — all tested. Actual sign-in/session flow not implemented |
 | 07 | RLS and Security | **Complete** | 118 policies across 65 tables; every exposed table has RLS and ≥1 policy; draft isolation, audit protection, subscription-based access all tested. `docs/rls.md` and `docs/threat-model.md` outstanding |
 | 08 | Editorial Workflow | Partial | 8 `workflow` tables, 9 states, 19 transitions, DB-enforced transition guard and separation of duties. The atomic publication transaction is **not** implemented |
 | 09 | Administrative Dashboard | Not started | — |
 | 10 | Structured Editor | Not started | — |
-| 11 | Public Experience | Partial | Homepage renders server-side from live data with empty and degraded states; 18 further surfaces not built |
+| 11 | Public Experience | Partial | 17 public routes render server-side from live data with empty, degraded and tombstone states, over PostgREST or direct SQL. Read-only: no authoring, account or administrative surface |
 | 12 | Design System | Partial | Full token system, dark scheme, focus and reduced-motion handling. Component library not extracted |
 | 13 | Assets and Downloads | Partial | 7 `assets` tables, 5 buckets, policies, append-only download events. Signed URL issuance and upload validation not implemented |
 | 14 | Newsletter Subscriptions | Partial | 7 `subscriptions` tables with hashed tokens, consent evidence, suppression, retry queue. No provider adapter or routes |
@@ -46,18 +46,18 @@ the criteria were executed against the running system.
 | 19 | Analytics and Observability | Partial | `analytics.events` append-only with six event families and retention policies. No instrumentation in the app |
 | 20 | Accessibility | Partial | Semantic layout, skip link, focus indicator, reduced motion, dark scheme. **No automated or manual audit has been run** |
 | 21 | SEO and Machine Discovery | Partial | Metadata and canonical base configured. No sitemaps, feeds, JSON-LD, alternates or `llms.txt` |
-| 22 | Testing and Quality | Partial | 42 tests across unit/DB/RLS tiers, all passing. No integration, E2E, accessibility or security-scan tiers; no CI |
+| 22 | Testing and Quality | Partial | 9 test files across unit/DB/RLS/conformance tiers, all passing. CI runs lint, types, lockfile consistency, unit tests, build, clean-database migrations, schema integrity, database and RLS suites, secret scan, dependency audit, bundle scan and conformance. No integration, E2E or accessibility tiers |
 | 23 | Deployment and Operations | Not started | Scripts exist for local only |
 | 24 | Documentation and Handoff | Partial | `assumptions`, `local-development`, this file. 20 further documents outstanding |
 | 25 | Final Validation | Not started | — |
 | 26 | Implementation Checklist | Not started | Contract installed; execution requires Blocks 22–25 |
-| 27 | Security Hardening | Partial | Central security headers and a CSP without `unsafe-inline` for scripts, applied and verified over HTTP. No rate limiting, upload controls or dependency scanning |
+| 27 | Security Hardening | Partial | Central security headers and a CSP without `unsafe-inline` for scripts, applied and verified over HTTP. Privileged access now requires actor, permission, operation and audit in one transaction, confined by a conformance rule (remediation Workstream 3). No rate limiting or upload controls |
 | 28 | Google OAuth | Partial | `accounts.external_identities` with the uniqueness constraint, unwritable through the API, plus startup coherence validation. Flow not implemented |
 
 ## Verified Invariants
 
-These were executed, not asserted. 42 tests, all passing, against a real PostgreSQL 16
-cluster with pgvector 0.6.0.
+These were executed, not asserted, against a real PostgreSQL 16 cluster with pgvector
+0.6.0. See the remediation report for current counts.
 
 | Invariant | How it is proven |
 |---|---|
@@ -86,6 +86,20 @@ Recorded because each was a real hole that testing caught, not a hypothetical.
    `content.schedule` and `content.submit_for_review` were required by transitions but
    held by no role, making those transitions permanently unperformable — silently.
    Fixed in migration 1400, with a meta-test to prevent recurrence.
+
+## Foundation Remediation Pass
+
+Targeted correction of foundational defects that would have compromised the next
+implementation phase. Scope was deliberately limited: no new CMS features, no
+authentication, no production hardening.
+
+| Workstream | Outcome |
+|---|---|
+| 1 — Production database configuration | `DATABASE_URL` is the single canonical runtime variable. The unconditional localhost default is gone outside development and test. Staging and production reject local addresses, malformed URLs, development database names and placeholder credentials. `SUPABASE_DB_URL` was parsed but never used, and has been removed. `CRUX_ENV` now fails closed. |
+| 2 — Server-only environment boundary | `src/lib/env.ts` split into `public.ts`, `server.ts` and `mode.ts`. The server module carries `import 'server-only'`, so importing it from a Client Component is a build error rather than a bundled module that throws at runtime. |
+| 3 — Privileged database access | `asServiceRole` required only an eight-character reason. It now requires actor, permission, operation, resource, request id and reason; performs the permission check, the operation and the audit write in one transaction; rolls back if authorization or the audit write fails; and records refusals on a separate connection so they survive the rollback. A conformance rule confines it to `src/lib/db/`. |
+| 4 — CI baseline | Added lockfile consistency, a database-free unit test stage, and per-job least-privilege permissions. Actions remain tag-pinned — see known limitations. |
+| 5 — Documentation reconciliation | README rewritten. It previously described `/admin` as "an operating tool, not a demonstration" while `/admin` did not exist, and simultaneously claimed implementation had not begun. |
 
 ## Next Steps, in Dependency Order
 

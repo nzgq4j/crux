@@ -1,5 +1,5 @@
 import type { ContentModule } from '@/lib/content/queries'
-import { serverEnv } from '@/lib/env'
+import { isProduction } from '@/lib/env/mode'
 
 /**
  * Renders structured content modules as semantic HTML (Block 11, §45.4.1).
@@ -393,7 +393,7 @@ function Module({ module: m }: { module: ContentModule }) {
  * mechanism that stops it reaching production in the first place.
  */
 function MalformedModule({ id, kind, reason }: { id: string; kind: string; reason: string }) {
-  if (serverEnv().NODE_ENV === 'production') return null
+  if (isProduction) return null
   return (
     <div
       id={id}

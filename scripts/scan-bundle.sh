@@ -20,7 +20,6 @@ fail=0
 # bundle means either the value or the lookup was shipped to the browser.
 SERVER_ONLY=(
   SUPABASE_SECRET_KEY
-  SUPABASE_DB_URL
   DATABASE_URL
   GOOGLE_OAUTH_CLIENT_SECRET
   CRON_SECRET
